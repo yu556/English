@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>英语国际音标表 · 点击发音</title>
+  <style>
+    :root {
+      --ink: #1a1f2e;
+      --label: #4a5568;
+      --line: #d8dde6;
+      --accent: #1f6feb;
+      --accent-soft: #e8f1ff;
+      --play: #0f9d58;
+      --shadow: 0 10px 30px rgba(26, 31, 46, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at 12% 8%, #dbeafe 0%, transparent 35%),
+        radial-gradient(circle at 88% 0%, #e0f2fe 0%, transparent 30%),
+        linear-gradient(180deg, #eef2f7 0%, #e8edf5 100%);
+      color: var(--ink);
+      min-height: 100vh;
+      padding: 24px 16px 48px;
+    }
+
+    .wrap { max-width: 920px; margin: 0 auto; }
+
+    header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .brand h1 {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      letter-spacing: 0.02em;
+      line-height: 1.2;
+    }
+
+    .brand p {
+      margin-top: 6px;
+      color: var(--label);
+      font-size: 0.95rem;
+    }
+
+    .hint {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      color: var(--label);
+      white-space: nowrap;
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .title-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #fff, #f8fafc);
+    }
+
+    .title-bar h2 { font-size: 1.15rem; font-weight: 700; }
+
+    .mode {
+      display: flex;
+      gap: 6px;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 10px;
+    }
+
+    .mode button {
+      border: none;
+      background: transparent;
+      color: var(--label);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .mode button.active {
+      background: #fff;
+      color: var(--accent);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      vertical-align: middle;
+    }
+
+    .side {
+      width: 72px;
+      background: #f3f6fb;
+      color: var(--label);
+      font-weight: 700;
+      text-align: center;
+      font-size: 0.95rem;
+      letter-spacing: 0.08em;
+    }
+
+    .sub {
+      width: 92px;
+      background: #f8fafc;
+      color: var(--label);
+      text-align: center;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 10px 6px;
+    }
+
+    .cells {
+      padding: 10px 12px;
+      background: #fff;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .ipa {
+      appearance: none;
+      border: 1px solid #c9d4e4;
+      background: #fff;
+      color: var(--ink);
+      border-radius: 12px;
+      min-width: 58px;
+      height: 46px;
+      padding: 0 12px;
+      font-family: "Cambria", "Times New Roman", "Segoe UI Symbol", serif;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.12s ease, background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .ipa:hover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 14px rgba(31, 111, 235, 0.12);
+    }
+
+    .ipa:active { transform: translateY(0); }
+
+    .ipa.playing {
+      background: #e8fff2;
+      border-color: var(--play);
+      box-shadow: 0 0 0 3px rgba(15, 157, 88, 0.15);
+    }
+
+    .now {
+      margin-top: 14px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px 18px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 14px;
+      align-items: center;
+      min-height: 84px;
+    }
+
+    .now-symbol {
+      width: 64px;
+      height: 64px;
+      border-radius: 14px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      font-family: "Cambria", "Times New Roman", serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      border: 1px solid #bfd3f7;
+    }
+
+    .now-meta .label {
+      font-size: 0.8rem;
+      color: var(--label);
+      margin-bottom: 4px;
+    }
+
+    .now-meta .word {
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+
+    .now-meta .tip {
+      margin-top: 4px;
+      color: #5b6575;
+      font-size: 0.92rem;
+    }
+
+    .actions { display: flex; gap: 8px; }
+
+    .replay, .word-btn {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .replay {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .word-btn {
+      background: #eef2ff;
+      color: #3730a3;
+    }
+
+    .replay:disabled, .word-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .replay:not(:disabled):hover,
+    .word-btn:not(:disabled):hover { filter: brightness(1.05); }
+
+    footer {
+      margin-top: 14px;
+      color: #6b7280;
+      font-size: 0.82rem;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 720px) {
+      header { flex-direction: column; align-items: flex-start; }
+      .hint { white-space: normal; }
+      .side, .sub { width: 64px; font-size: 0.8rem; }
+      .ipa { min-width: 52px; height: 42px; font-size: 1.05rem; padding: 0 8px; }
+      .now { grid-template-columns: auto 1fr; }
+      .actions { grid-column: 1 / -1; }
+      .title-bar { flex-direction: column; align-items: flex-start; gap: 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <h1>英语国际音标表</h1>
+        <p>点击音标听<strong>音标本音</strong>，不是例词</p>
+      </div>
+      <div class="hint">默认：音标本音</div>
+    </header>
+
+    <section class="panel">
+      <div class="title-bar">
+        <h2>国际音标表</h2>
+        <div class="mode" role="group" aria-label="播放模式">
+          <button type="button" class="active" data-mode="sound" id="modeSound">音标本音</button>
+          <button type="button" data-mode="word" id="modeWord">例词发音</button>
+        </div>
+      </div>
+
+      <table aria-label="英语国际音标表">
+        <tbody>
+          <tr>
+            <th class="side" rowspan="3">元<br>音</th>
+            <th class="sub" rowspan="2">单元音</th>
+            <td class="cells"><div class="row" id="long-vowels"></div></td>
+          </tr>
+          <tr>
+            <td class="cells"><div class="row" id="short-vowels"></div></td>
+          </tr>
+          <tr>
+            <th class="sub">双元音</th>
+            <td class="cells"><div class="row" id="diphthongs"></div></td>
+          </tr>
+          <tr>
+            <th class="side" rowspan="3">辅<br>音</th>
+            <th class="sub">清辅音</th>
+            <td class="cells"><div class="row" id="voiceless"></div></td>
+          </tr>
+          <tr>
+            <th class="sub">浊辅音</th>
+            <td class="cells"><div class="row" id="voiced"></div></td>
+          </tr>
+          <tr>
+            <th class="sub">其他</th>
+            <td class="cells"><div class="row" id="other"></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="now" aria-live="polite">
+      <div class="now-symbol" id="nowSymbol">—</div>
+      <div class="now-meta">
+        <div class="label">当前音标</div>
+        <div class="word" id="nowWord">点击上方音标开始练习</div>
+        <div class="tip" id="nowTip">现在会播放音标本音（英式）</div>
+      </div>
+      <div class="actions">
+        <button class="replay" id="replay" disabled>再听音标</button>
+        <button class="word-btn" id="playWord" disabled>听例词</button>
+      </div>
+    </section>
+
+    <footer>
+      音标本音来自英式英语录音。ts / dz / tr / dr 由相邻音素连续播放模拟。
+    </footer>
+  </div>
+
+  <script>
+    // IPA -> local audio file key(s). Clusters play as a sequence.
+    const AUDIO_KEY = {
+      "ɑː": "aa", "ɔː": "or", "ɜː": "er", "iː": "iy", "uː": "uw",
+      "ʌ": "uh", "ɒ": "o", "ə": "ax", "ɪ": "ih", "ʊ": "u", "æ": "ae", "e": "e",
+      "aɪ": "ai", "eɪ": "ei", "ɔɪ": "oi", "ɪə": "ia", "eə": "ea", "ʊə": "ua", "əʊ": "ou", "aʊ": "au",
+      "p": "p", "t": "t", "k": "k", "f": "f", "θ": "th", "s": "s", "ʃ": "sh", "tʃ": "ch",
+      "b": "b", "d": "d", "g": "g", "v": "v", "ð": "dh", "z": "z", "ʒ": "zh", "dʒ": "jh",
+      "m": "m", "n": "n", "ŋ": "ng", "l": "l", "r": "r", "h": "h", "w": "w", "j": "y",
+      "ts": ["t", "s"], "dz": ["d", "z"], "tr": ["t", "r"], "dr": ["d", "r"]
+    };
+
+    const DATA = {
+      "long-vowels": [
+        { ipa: "ɑː", word: "father", tip: "长元音 · 例词 father / car" },
+        { ipa: "ɔː", word: "door", tip: "长元音 · 例词 door / thought" },
+        { ipa: "ɜː", word: "bird", tip: "长元音 · 例词 bird / nurse" },
+        { ipa: "iː", word: "see", tip: "长元音 · 例词 see / fleece" },
+        { ipa: "uː", word: "blue", tip: "长元音 · 例词 blue / goose" }
+      ],
+      "short-vowels": [
+        { ipa: "ʌ", word: "cup", tip: "短元音 · 例词 cup / strut" },
+        { ipa: "ɒ", word: "hot", tip: "短元音 · 例词 hot / lot（英式）" },
+        { ipa: "ə", word: "about", tip: "短元音 · 弱读 · 例词 about" },
+        { ipa: "ɪ", word: "sit", tip: "短元音 · 例词 sit / kit" },
+        { ipa: "ʊ", word: "book", tip: "短元音 · 例词 book / foot" },
+        { ipa: "æ", word: "cat", tip: "短元音 · 例词 cat / trap" },
+        { ipa: "e", word: "bed", tip: "短元音 · 例词 bed / dress" }
+      ],
+      diphthongs: [
+        { ipa: "aɪ", word: "my", tip: "双元音 · 例词 my / price" },
+        { ipa: "eɪ", word: "day", tip: "双元音 · 例词 day / face" },
+        { ipa: "ɔɪ", word: "boy", tip: "双元音 · 例词 boy / choice" },
+        { ipa: "ɪə", word: "near", tip: "双元音 · 例词 near" },
+        { ipa: "eə", word: "hair", tip: "双元音 · 例词 hair / square" },
+        { ipa: "ʊə", word: "tour", tip: "双元音 · 例词 tour / pure" },
+        { ipa: "əʊ", word: "go", tip: "双元音 · 例词 go / goat" },
+        { ipa: "aʊ", word: "now", tip: "双元音 · 例词 now / mouth" }
+      ],
+      voiceless: [
+        { ipa: "p", word: "pen", tip: "清辅音 · 例词 pen" },
+        { ipa: "t", word: "tea", tip: "清辅音 · 例词 tea" },
+        { ipa: "k", word: "key", tip: "清辅音 · 例词 key" },
+        { ipa: "f", word: "fish", tip: "清辅音 · 例词 fish" },
+        { ipa: "θ", word: "think", tip: "清辅音 · 例词 think" },
+        { ipa: "s", word: "sun", tip: "清辅音 · 例词 sun" },
+        { ipa: "ts", word: "cats", tip: "清辅音 · 例词 cats" },
+        { ipa: "tr", word: "tree", tip: "清辅音 · 例词 tree" },
+        { ipa: "ʃ", word: "ship", tip: "清辅音 · 例词 ship" },
+        { ipa: "tʃ", word: "chair", tip: "清辅音 · 例词 chair" }
+      ],
+      voiced: [
+        { ipa: "b", word: "book", tip: "浊辅音 · 例词 book" },
+        { ipa: "d", word: "dog", tip: "浊辅音 · 例词 dog" },
+        { ipa: "g", word: "go", tip: "浊辅音 · 例词 go" },
+        { ipa: "v", word: "very", tip: "浊辅音 · 例词 very" },
+        { ipa: "ð", word: "this", tip: "浊辅音 · 例词 this" },
+        { ipa: "z", word: "zoo", tip: "浊辅音 · 例词 zoo" },
+        { ipa: "dz", word: "beds", tip: "浊辅音 · 例词 beds" },
+        { ipa: "dr", word: "dream", tip: "浊辅音 · 例词 dream" },
+        { ipa: "ʒ", word: "vision", tip: "浊辅音 · 例词 vision" },
+        { ipa: "dʒ", word: "job", tip: "浊辅音 · 例词 job" }
+      ],
+      other: [
+        { ipa: "m", word: "man", tip: "其他辅音 · 例词 man" },
+        { ipa: "n", word: "no", tip: "其他辅音 · 例词 no" },
+        { ipa: "ŋ", word: "sing", tip: "其他辅音 · 例词 sing" },
+        { ipa: "l", word: "light", tip: "其他辅音 · 例词 light" },
+        { ipa: "r", word: "red", tip: "其他辅音 · 例词 red" },
+        { ipa: "h", word: "hat", tip: "其他辅音 · 例词 hat" },
+        { ipa: "w", word: "we", tip: "其他辅音 · 例词 we" },
+        { ipa: "j", word: "yes", tip: "其他辅音 · 例词 yes" }
+      ]
+    };
+
+    const nowSymbol = document.getElementById("nowSymbol");
+    const nowWord = document.getElementById("nowWord");
+    const nowTip = document.getElementById("nowTip");
+    const replayBtn = document.getElementById("replay");
+    const playWordBtn = document.getElementById("playWord");
+
+    let current = null;
+    let playMode = "sound"; // sound | word
+    let activeAudio = null;
+    let voices = [];
+
+    function audioUrl(key) {
+      return `./audio/${key}.mp3`;
+    }
+
+    function stopAll() {
+      if (activeAudio) {
+        activeAudio.onended = null;
+        activeAudio.onerror = null;
+        activeAudio.pause();
+        activeAudio = null;
+      }
+      if (window.speechSynthesis) speechSynthesis.cancel();
+      document.querySelectorAll(".ipa.playing").forEach((el) => el.classList.remove("playing"));
+    }
+
+    function playKeys(keys) {
+      return new Promise((resolve, reject) => {
+        const list = Array.isArray(keys) ? keys : [keys];
+        let i = 0;
+
+        const next = () => {
+          if (i >= list.length) {
+            resolve();
+            return;
+          }
+          const audio = new Audio(audioUrl(list[i++]));
+          activeAudio = audio;
+          audio.onended = next;
+          audio.onerror = () => reject(new Error("audio missing: " + list[i - 1]));
+          audio.play().catch(reject);
+        };
+        next();
+      });
+    }
+
+    function loadVoices() {
+      voices = speechSynthesis.getVoices().filter((v) => v.lang.toLowerCase().startsWith("en"));
+      if (!voices.length) voices = speechSynthesis.getVoices();
+    }
+
+    function preferredVoice() {
+      const rank = (v) => {
+        const name = `${v.name} ${v.lang}`.toLowerCase();
+        let score = 0;
+        if (v.lang.toLowerCase().startsWith("en")) score += 10;
+        if (v.lang.toLowerCase().includes("gb") || name.includes("uk") || name.includes("british")) score += 8;
+        return score;
+      };
+      return [...voices].sort((a, b) => rank(b) - rank(a))[0] || null;
+    }
+
+    function speakWord(word) {
+      return new Promise((resolve) => {
+        if (!window.speechSynthesis) {
+          resolve();
+          return;
+        }
+        const utter = new SpeechSynthesisUtterance(word);
+        const voice = preferredVoice();
+        if (voice) {
+          utter.voice = voice;
+          utter.lang = voice.lang;
+        } else {
+          utter.lang = "en-GB";
+        }
+        utter.rate = 0.9;
+        utter.onend = resolve;
+        utter.onerror = resolve;
+        speechSynthesis.speak(utter);
+      });
+    }
+
+    async function playSound(item, button) {
+      stopAll();
+      if (button) button.classList.add("playing");
+
+      const key = AUDIO_KEY[item.ipa];
+      try {
+        await playKeys(key);
+      } catch (err) {
+        nowTip.textContent = "音标音频加载失败，请确认 audio 文件夹完整";
+        console.error(err);
+      } finally {
+        if (button) button.classList.remove("playing");
+      }
+    }
+
+    async function playExampleWord(item, button) {
+      stopAll();
+      if (button) button.classList.add("playing");
+      try {
+        await speakWord(item.word);
+      } finally {
+        if (button) button.classList.remove("playing");
+      }
+    }
+
+    async function activate(item, button) {
+      current = item;
+      nowSymbol.textContent = `[${item.ipa}]`;
+      nowWord.textContent = item.word;
+      nowTip.textContent = item.tip;
+      replayBtn.disabled = false;
+      playWordBtn.disabled = false;
+
+      if (playMode === "word") {
+        await playExampleWord(item, button);
+      } else {
+        await playSound(item, button);
+      }
+    }
+
+    function renderGroup(id, items) {
+      const box = document.getElementById(id);
+      items.forEach((item) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "ipa";
+        btn.textContent = `[${item.ipa}]`;
+        btn.title = `${item.tip}（点击听音标本音）`;
+        btn.setAttribute("aria-label", `音标 ${item.ipa}`);
+        btn.addEventListener("click", () => activate(item, btn));
+        box.appendChild(btn);
+      });
+    }
+
+    Object.entries(DATA).forEach(([id, items]) => renderGroup(id, items));
+
+    document.querySelectorAll(".mode button").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".mode button").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        playMode = btn.dataset.mode;
+        document.querySelector(".hint").textContent =
+          playMode === "sound" ? "默认：音标本音" : "当前：例词发音";
+      });
+    });
+
+    replayBtn.addEventListener("click", () => {
+      if (current) playSound(current, document.querySelector(".ipa.playing") || null);
+    });
+
+    playWordBtn.addEventListener("click", () => {
+      if (current) playExampleWord(current, null);
+    });
+
+    loadVoices();
+    if (typeof speechSynthesis !== "undefined") {
+      speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  </script>
+</body>
+</html>
