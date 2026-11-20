@@ -3,3 +3,4 @@ gh-out.txt
 gh-err.txt
 gh.pid
 server.js
+tmp-pdf/

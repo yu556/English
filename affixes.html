@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f766e" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>否定前缀 · 词缀背单词</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #1c1917;
+      --muted: #57534e;
+      --line: #d6d3d1;
+      --paper: #faf7f2;
+      --panel: #fffdf9;
+      --side: #1f2a28;
+      --side-text: #d6ebe6;
+      --side-muted: #8fb3ab;
+      --accent: #0f766e;
+      --accent-soft: #ccfbf1;
+      --danger: #b91c1c;
+      --ok: #15803d;
+      --shadow: 0 12px 40px rgba(28, 25, 23, 0.08);
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-t: env(safe-area-inset-top, 0px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; }
+    button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+    body {
+      font-family: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--ink);
+      min-height: 100dvh;
+      background:
+        radial-gradient(ellipse at 18% 0%, #d8f3ef 0%, transparent 40%),
+        radial-gradient(ellipse at 95% 8%, #fde68a55 0%, transparent 32%),
+        linear-gradient(180deg, #f3efe6 0%, var(--paper) 50%, #ebe6dc 100%);
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 240px minmax(0, 1fr);
+      min-height: 100dvh;
+    }
+
+    /* —— Course sidebar —— */
+    .course-side {
+      background: var(--side);
+      color: var(--side-text);
+      padding: calc(18px + var(--safe-t)) 14px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      position: sticky;
+      top: 0;
+      height: 100dvh;
+      overflow: auto;
+    }
+
+    .course-side .logo {
+      font-family: Fraunces, Georgia, serif;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+      padding: 4px 8px;
+    }
+
+    .course-side .logo span {
+      display: block;
+      margin-top: 4px;
+      font-family: "IBM Plex Sans", sans-serif;
+      font-size: 0.78rem;
+      color: var(--side-muted);
+      font-weight: 500;
+    }
+
+    .course-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--side-muted);
+      padding: 0 8px;
+      margin-bottom: 8px;
+    }
+
+    .course-nav { display: flex; flex-direction: column; gap: 6px; }
+
+    .course-nav a {
+      display: block;
+      text-decoration: none;
+      color: var(--side-text);
+      padding: 12px 12px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      font-size: 0.92rem;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+
+    .course-nav a small {
+      display: block;
+      margin-top: 3px;
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--side-muted);
+    }
+
+    .course-nav a:hover { background: rgba(255,255,255,.06); }
+    .course-nav a.active {
+      background: rgba(20, 184, 166, 0.18);
+      border-color: rgba(94, 234, 212, 0.35);
+      color: #99f6e4;
+    }
+    .course-nav a.active small { color: #5eead4; }
+
+    .side-note {
+      margin-top: auto;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.05);
+      font-size: 0.78rem;
+      color: var(--side-muted);
+      line-height: 1.45;
+    }
+
+    /* —— Main —— */
+    .main-col {
+      min-width: 0;
+      padding: 18px 16px calc(28px + var(--safe-b));
+    }
+
+    .wrap { max-width: 920px; margin: 0 auto; }
+
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .brand h1 {
+      font-family: Fraunces, Georgia, serif;
+      font-size: clamp(1.45rem, 3.6vw, 2rem);
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    .brand p {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .mobile-course-btn {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      font: inherit;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--ink);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 9px 14px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+    }
+
+    .shell {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #fffefb, #f8f4ec);
+    }
+
+    .modes {
+      display: flex;
+      gap: 4px;
+      background: #efeae1;
+      padding: 4px;
+      border-radius: 12px;
+    }
+
+    .modes button,
+    .chip,
+    .btn,
+    .speak-btn {
+      font: inherit;
+      cursor: pointer;
+      border: none;
+    }
+
+    .modes button {
+      background: transparent;
+      color: var(--muted);
+      padding: 8px 12px;
+      border-radius: 9px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      min-height: 40px;
+    }
+
+    .modes button.active {
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    }
+
+    .stats {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 6px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .filters::-webkit-scrollbar { display: none; }
+
+    .chip {
+      flex: 0 0 auto;
+      background: #f5f0e8;
+      color: var(--muted);
+      border: 1px solid transparent;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      min-height: 36px;
+    }
+
+    .chip.active {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: #99f6e4;
+    }
+
+    .main { padding: 14px 12px 18px; min-height: 420px; }
+
+    .lesson-banner {
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: #f0fdfa;
+      border: 1px solid #99f6e4;
+      color: #115e59;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+
+    .lesson-banner strong {
+      font-family: "IBM Plex Mono", monospace;
+    }
+
+    /* Browse */
+    .group { margin-bottom: 20px; }
+    .group:last-child { margin-bottom: 0; }
+
+    .group-head {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .group-head h2 {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 1.05rem;
+      color: var(--accent);
+    }
+
+    .group-head span { color: var(--muted); font-size: 0.82rem; }
+
+    .pair-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 8px;
+    }
+
+    .pair {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+    }
+
+    .pair.known {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .pair-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .pair .side { min-width: 0; }
+    .pair .en {
+      font-weight: 600;
+      font-size: 0.98rem;
+      word-break: break-word;
+      line-height: 1.3;
+    }
+    .pair .pos-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+    .pair .meta-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+    .pair .ipa {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.78rem;
+      color: #0f766e;
+      letter-spacing: 0.01em;
+      margin-top: 3px;
+    }
+    .pair .zh { color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
+    .flash-ipa {
+      margin-top: 10px;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 1rem;
+      color: #0f766e;
+    }
+    .pair .arrow {
+      color: #a8a29e;
+      font-size: 0.85rem;
+      padding-top: 4px;
+      text-align: center;
+    }
+
+    .pair-actions {
+      display: flex;
+      justify-content: flex-end;
+      border-top: 1px dashed #e7e5e4;
+      padding-top: 8px;
+    }
+
+    .speak-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+      width: 32px;
+      height: 32px;
+      background: #ecfdf5;
+      color: var(--accent);
+      border: 1px solid #99f6e4;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .speak-btn:active { transform: scale(.97); }
+    .speak-btn.playing { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .mark-btn {
+      font: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 7px 4px;
+      min-height: 34px;
+    }
+
+    /* Flash / quiz */
+    .study-wrap {
+      max-width: 480px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: #e7e5e4;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-bar > i {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0d9488, #14b8a6);
+      transition: width .25s ease;
+    }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .card {
+      perspective: 1000px;
+      min-height: 250px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      min-height: 250px;
+      transition: transform .45s cubic-bezier(.2,.8,.2,1);
+      transform-style: preserve-3d;
+    }
+
+    .card.flipped .card-inner { transform: rotateY(180deg); }
+
+    .face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      padding: 22px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .face.back { transform: rotateY(180deg); background: #f0fdfa; }
+
+    .tag {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 3px 9px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+
+    .word {
+      font-family: Fraunces, Georgia, serif;
+      font-size: clamp(1.65rem, 5vw, 2.3rem);
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    .pos { margin-top: 8px; color: var(--muted); font-size: 0.9rem; }
+    .meaning { font-size: 1.3rem; font-weight: 600; margin-top: 6px; }
+    .base-hint { margin-top: 14px; color: var(--muted); font-size: 0.9rem; line-height: 1.45; }
+    .example { margin-top: 10px; font-size: 0.88rem; color: #44403c; line-height: 1.5; max-width: 34ch; }
+    .hint-tap { margin-top: 16px; font-size: 0.78rem; color: #a8a29e; }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .btn {
+      border-radius: 12px;
+      padding: 13px 10px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      min-height: 48px;
+    }
+
+    .btn:active { transform: scale(.98); }
+    .btn.ghost { background: #f5f0e8; }
+    .btn.ok { background: #dcfce7; border-color: #86efac; color: var(--ok); }
+    .btn.bad { background: #fee2e2; border-color: #fca5a5; color: var(--danger); }
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .quiz-prompt { text-align: center; margin-bottom: 14px; }
+    .quiz-prompt .big {
+      font-family: Fraunces, Georgia, serif;
+      font-size: clamp(1.45rem, 4vw, 1.95rem);
+      margin: 8px 0 4px;
+    }
+
+    .choices { display: grid; gap: 8px; }
+
+    .choice {
+      text-align: left;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .choice .choice-speak {
+      flex: 0 0 auto;
+      font-size: 0.75rem;
+      color: var(--accent);
+      background: var(--accent-soft);
+      border: none;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .choice:hover:not(:disabled) { border-color: #99f6e4; background: #f0fdfa; }
+    .choice.correct { background: #dcfce7; border-color: #86efac; color: var(--ok); }
+    .choice.wrong { background: #fee2e2; border-color: #fca5a5; color: var(--danger); }
+    .choice:disabled { cursor: default; }
+
+    .feedback {
+      margin-top: 10px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: var(--muted);
+      min-height: 1.4em;
+    }
+
+    .empty { text-align: center; color: var(--muted); padding: 48px 12px; }
+    .done-box { text-align: center; padding: 36px 12px; }
+    .done-box h3 {
+      font-family: Fraunces, Georgia, serif;
+      font-size: 1.55rem;
+      margin-bottom: 8px;
+    }
+    .done-box p { color: var(--muted); margin-bottom: 16px; }
+
+    /* Mobile course sheet */
+    .backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(28, 25, 23, 0.45);
+      z-index: 40;
+    }
+    .backdrop.open { display: block; }
+
+    .course-sheet {
+      display: none;
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      z-index: 50;
+      background: #1f2a28;
+      color: var(--side-text);
+      border-radius: 20px 20px 0 0;
+      padding: 10px 14px calc(18px + var(--safe-b));
+      box-shadow: 0 -10px 40px rgba(0,0,0,.25);
+      transform: translateY(110%);
+      transition: transform .28s ease;
+    }
+    .course-sheet.open { transform: translateY(0); }
+    .sheet-handle {
+      width: 42px; height: 4px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.25);
+      margin: 4px auto 14px;
+    }
+
+    @media (max-width: 860px) {
+      .app { grid-template-columns: 1fr; }
+      .course-side { display: none; }
+      .mobile-course-btn { display: inline-flex; }
+      .course-sheet { display: block; }
+      .main-col { padding: 12px 10px calc(22px + var(--safe-b)); }
+      .pair-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+      }
+      .pair .arrow { display: none; }
+      .actions { grid-template-columns: 1fr 1fr; }
+      .actions .btn.ghost { grid-column: 1 / -1; }
+      .pair-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="course-side" aria-label="课程菜单">
+      <div class="logo">
+        英语课
+        <span>随时切换课程</span>
+      </div>
+      <div>
+        <div class="course-label">课程</div>
+        <nav class="course-nav">
+          <a href="index.html">
+            ① 音标课
+            <small>国际音标 · 点击发音</small>
+          </a>
+          <a href="affixes.html" class="active" aria-current="page">
+            ② 词缀课 · 否定前缀
+            <small>in / im / ir / il / un / dis / de / mis</small>
+          </a>
+        </nav>
+      </div>
+      <div class="side-note">通勤时可先筛一个词缀，用闪卡或测验；每个词都能点发音。</div>
+    </aside>
+
+    <div class="main-col">
+      <div class="wrap">
+        <div class="topbar">
+          <div class="brand">
+            <h1>否定前缀</h1>
+            <p>词缀课第二节 · 浏览 / 闪卡 / 测验</p>
+          </div>
+          <button type="button" class="mobile-course-btn" id="openCourse" aria-haspopup="dialog">
+            课程菜单
+          </button>
+        </div>
+
+        <div class="shell">
+          <div class="toolbar">
+            <div class="modes" role="tablist" aria-label="学习模式">
+              <button type="button" data-mode="browse" class="active">浏览</button>
+              <button type="button" data-mode="flash">闪卡</button>
+              <button type="button" data-mode="quiz">测验</button>
+            </div>
+            <div class="stats" id="stats">—</div>
+          </div>
+
+          <div class="filters" id="filters" aria-label="词缀筛选"></div>
+          <div class="main" id="main"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="backdrop" id="backdrop" hidden></div>
+  <div class="course-sheet" id="courseSheet" role="dialog" aria-label="选择课程" hidden>
+    <div class="sheet-handle"></div>
+    <div class="course-label">切换课程</div>
+    <nav class="course-nav">
+      <a href="index.html">
+        ① 音标课
+        <small>国际音标 · 点击发音</small>
+      </a>
+      <a href="affixes.html" class="active" aria-current="page">
+        ② 词缀课 · 否定前缀
+        <small>in / im / ir / il / un / dis / de / mis</small>
+      </a>
+    </nav>
+  </div>
+
+  <script>
+    const WORDS = [
+      { prefix: "in-", word: "inexpensive", pos: "adj.", meaning: "便宜的", base: "expensive", baseMeaning: "昂贵的", ipa: "/ˌɪnɪkˈspensɪv/", baseIpa: "/ɪkˈspensɪv/", example: "Check out the various inexpensive ways to tour the city." },
+      { prefix: "in-", word: "incorrect", pos: "adj.", meaning: "不正确的", base: "correct", baseMeaning: "正确的", ipa: "/ˌɪnkəˈrekt/", baseIpa: "/kəˈrekt/" },
+      { prefix: "in-", word: "indirect", pos: "adj.", meaning: "间接的", base: "direct", baseMeaning: "直接的", ipa: "/ˌɪndəˈrekt/", baseIpa: "/dəˈrekt/" },
+      { prefix: "in-", word: "inactive", pos: "adj.", meaning: "不活跃的", base: "active", baseMeaning: "活跃的", ipa: "/ɪnˈæktɪv/", baseIpa: "/ˈæktɪv/" },
+      { prefix: "in-", word: "inaccurate", pos: "adj.", meaning: "不准确的", base: "accurate", baseMeaning: "准确的", ipa: "/ɪnˈækjərət/", baseIpa: "/ˈækjərət/" },
+      { prefix: "in-", word: "independent", pos: "adj.", meaning: "独立的", base: "dependent", baseMeaning: "依靠的", ipa: "/ˌɪndɪˈpendənt/", baseIpa: "/dɪˈpendənt/" },
+      { prefix: "in-", word: "inconvenient", pos: "adj.", meaning: "不便的", base: "convenient", baseMeaning: "方便的", ipa: "/ˌɪnkənˈviːniənt/", baseIpa: "/kənˈviːniənt/" },
+      { prefix: "in-", word: "inappropriate", pos: "adj.", meaning: "不合适的", base: "appropriate", baseMeaning: "合适的", ipa: "/ˌɪnəˈprəʊpriət/", baseIpa: "/əˈprəʊpriət/" },
+      { prefix: "in-", word: "invisible", pos: "adj.", meaning: "看不见的", base: "visible", baseMeaning: "可见的", ipa: "/ɪnˈvɪzəbl/", baseIpa: "/ˈvɪzəbl/" },
+      { prefix: "in-", word: "inefficient", pos: "adj.", meaning: "效率低的", base: "efficient", baseMeaning: "高效的", ipa: "/ˌɪnɪˈfɪʃnt/", baseIpa: "/ɪˈfɪʃnt/" },
+      { prefix: "in-", word: "incomplete", pos: "adj.", meaning: "不完全的", base: "complete", baseMeaning: "完全的", ipa: "/ˌɪnkəmˈpliːt/", baseIpa: "/kəmˈpliːt/" },
+      { prefix: "in-", word: "inconvenience", pos: "n.", meaning: "不便", base: "convenience", baseMeaning: "方便", ipa: "/ˌɪnkənˈviːniəns/", baseIpa: "/kənˈviːniəns/", example: "The inconvenience caused by the machine was acceptable." },
+      { prefix: "in-", word: "inaccuracy", pos: "n.", meaning: "不精确", base: "accuracy", baseMeaning: "准确性", ipa: "/ɪnˈækjərəsi/", baseIpa: "/ˈækjərəsi/" },
+      { prefix: "in-", word: "independence", pos: "n.", meaning: "独立", base: "dependence", baseMeaning: "依靠", ipa: "/ˌɪndɪˈpendəns/", baseIpa: "/dɪˈpendəns/" },
+      { prefix: "in-", word: "inability", pos: "n.", meaning: "无能", base: "ability", baseMeaning: "能力", ipa: "/ˌɪnəˈbɪləti/", baseIpa: "/əˈbɪləti/" },
+      { prefix: "in-", word: "incompetence", pos: "n.", meaning: "无能", base: "competence", baseMeaning: "能力", ipa: "/ɪnˈkɒmpɪtəns/", baseIpa: "/ˈkɒmpɪtəns/" },
+      { prefix: "in-", word: "injustice", pos: "n.", meaning: "不公平", base: "justice", baseMeaning: "公平", ipa: "/ɪnˈdʒʌstɪs/", baseIpa: "/ˈdʒʌstɪs/" },
+      { prefix: "im-", word: "impossible", pos: "adj.", meaning: "不可能的", base: "possible", baseMeaning: "可能的", ipa: "/ɪmˈpɒsəbl/", baseIpa: "/ˈpɒsəbl/", example: "She found it impossible to finish all these tasks." },
+      { prefix: "im-", word: "impolite", pos: "adj.", meaning: "不礼貌的", base: "polite", baseMeaning: "礼貌的", ipa: "/ˌɪmpəˈlaɪt/", baseIpa: "/pəˈlaɪt/" },
+      { prefix: "im-", word: "impatient", pos: "adj.", meaning: "不耐心的", base: "patient", baseMeaning: "耐心的", ipa: "/ɪmˈpeɪʃnt/", baseIpa: "/ˈpeɪʃnt/" },
+      { prefix: "im-", word: "imperfect", pos: "adj.", meaning: "不完美的", base: "perfect", baseMeaning: "完美的", ipa: "/ɪmˈpɜːfɪkt/", baseIpa: "/ˈpɜːfɪkt/" },
+      { prefix: "im-", word: "improper", pos: "adj.", meaning: "不合适的", base: "proper", baseMeaning: "合适的", ipa: "/ɪmˈprɒpə/", baseIpa: "/ˈprɒpə/" },
+      { prefix: "im-", word: "impractical", pos: "adj.", meaning: "不切实际的", base: "practical", baseMeaning: "实际的", ipa: "/ɪmˈpræktɪkl/", baseIpa: "/ˈpræktɪkl/" },
+      { prefix: "im-", word: "immeasurable", pos: "adj.", meaning: "不可测量的", base: "measurable", baseMeaning: "可测量的", ipa: "/ɪˈmeʒərəbl/", baseIpa: "/ˈmeʒərəbl/" },
+      { prefix: "im-", word: "immoral", pos: "adj.", meaning: "不道德的", base: "moral", baseMeaning: "道德的", ipa: "/ɪˈmɒrəl/", baseIpa: "/ˈmɒrəl/" },
+      { prefix: "im-", word: "immature", pos: "adj.", meaning: "不成熟的", base: "mature", baseMeaning: "成熟的", ipa: "/ˌɪməˈtʃʊə/", baseIpa: "/məˈtʃʊə/" },
+      { prefix: "im-", word: "immovable", pos: "adj.", meaning: "固定的", base: "movable", baseMeaning: "可移动的", ipa: "/ɪˈmuːvəbl/", baseIpa: "/ˈmuːvəbl/" },
+      { prefix: "im-", word: "immobile", pos: "adj.", meaning: "静止的", base: "mobile", baseMeaning: "可移动的", ipa: "/ɪˈməʊbaɪl/", baseIpa: "/ˈməʊbaɪl/" },
+      { prefix: "ir-", word: "irregular", pos: "adj.", meaning: "不规律的", base: "regular", baseMeaning: "规律的", ipa: "/ɪˈreɡjələ/", baseIpa: "/ˈreɡjələ/", example: "The schedule for the project meetings is irregular." },
+      { prefix: "ir-", word: "irresponsible", pos: "adj.", meaning: "不负责的", base: "responsible", baseMeaning: "负责的", ipa: "/ˌɪrɪˈspɒnsəbl/", baseIpa: "/rɪˈspɒnsəbl/" },
+      { prefix: "ir-", word: "irreplaceable", pos: "adj.", meaning: "不可替代的", base: "replaceable", baseMeaning: "可替代的", ipa: "/ˌɪrɪˈpleɪsəbl/", baseIpa: "/rɪˈpleɪsəbl/" },
+      { prefix: "ir-", word: "irresistible", pos: "adj.", meaning: "无法抗拒的", base: "resistible", baseMeaning: "可抵抗的", ipa: "/ˌɪrɪˈzɪstəbl/", baseIpa: "/rɪˈzɪstəbl/" },
+      { prefix: "ir-", word: "irrelevant", pos: "adj.", meaning: "不相关的", base: "relevant", baseMeaning: "相关的", ipa: "/ɪˈreləvənt/", baseIpa: "/ˈreləvənt/" },
+      { prefix: "il-", word: "illegal", pos: "adj.", meaning: "违法的", base: "legal", baseMeaning: "合法的", ipa: "/ɪˈliːɡl/", baseIpa: "/ˈliːɡl/", example: "This would make it illegal to import these types of snakes." },
+      { prefix: "il-", word: "illogical", pos: "adj.", meaning: "无逻辑的", base: "logical", baseMeaning: "有逻辑的", ipa: "/ɪˈlɒdʒɪkl/", baseIpa: "/ˈlɒdʒɪkl/" },
+      { prefix: "un-", word: "uninterested", pos: "adj.", meaning: "不感兴趣的", base: "interested", baseMeaning: "感兴趣的", ipa: "/ʌnˈɪntrəstɪd/", baseIpa: "/ˈɪntrəstɪd/", example: "Girls are generally uninterested in these types of movies." },
+      { prefix: "un-", word: "unhappy", pos: "adj.", meaning: "不开心的", base: "happy", baseMeaning: "开心的", ipa: "/ʌnˈhæpi/", baseIpa: "/ˈhæpi/" },
+      { prefix: "un-", word: "unstable", pos: "adj.", meaning: "不稳定的", base: "stable", baseMeaning: "稳定的", ipa: "/ʌnˈsteɪbl/", baseIpa: "/ˈsteɪbl/" },
+      { prefix: "un-", word: "uncomfortable", pos: "adj.", meaning: "不舒服的", base: "comfortable", baseMeaning: "舒服的", ipa: "/ʌnˈkʌmftəbl/", baseIpa: "/ˈkʌmftəbl/" },
+      { prefix: "un-", word: "unfair", pos: "adj.", meaning: "不公平的", base: "fair", baseMeaning: "公平的", ipa: "/ˌʌnˈfeə/", baseIpa: "/feə/" },
+      { prefix: "un-", word: "unlucky", pos: "adj.", meaning: "不幸的", base: "lucky", baseMeaning: "幸运的", ipa: "/ʌnˈlʌki/", baseIpa: "/ˈlʌki/" },
+      { prefix: "un-", word: "unable", pos: "adj.", meaning: "无能力的", base: "able", baseMeaning: "有能力的", ipa: "/ʌnˈeɪbl/", baseIpa: "/ˈeɪbl/" },
+      { prefix: "un-", word: "uneasy", pos: "adj.", meaning: "不安的", base: "easy", baseMeaning: "安逸的", ipa: "/ʌnˈiːzi/", baseIpa: "/ˈiːzi/" },
+      { prefix: "un-", word: "unnecessary", pos: "adj.", meaning: "不必要的", base: "necessary", baseMeaning: "必要的", ipa: "/ʌnˈnesəsəri/", baseIpa: "/ˈnesəsəri/" },
+      { prefix: "un-", word: "unhealthy", pos: "adj.", meaning: "不健康的", base: "healthy", baseMeaning: "健康的", ipa: "/ʌnˈhelθi/", baseIpa: "/ˈhelθi/" },
+      { prefix: "un-", word: "unknown", pos: "adj.", meaning: "未知的", base: "known", baseMeaning: "已知的", ipa: "/ˌʌnˈnəʊn/", baseIpa: "/nəʊn/" },
+      { prefix: "un-", word: "unforgettable", pos: "adj.", meaning: "难忘的", base: "forgettable", baseMeaning: "易忘的", ipa: "/ˌʌnfəˈɡetəbl/", baseIpa: "/fəˈɡetəbl/" },
+      { prefix: "un-", word: "uncertain", pos: "adj.", meaning: "不确定的", base: "certain", baseMeaning: "确定的", ipa: "/ʌnˈsɜːtn/", baseIpa: "/ˈsɜːtn/" },
+      { prefix: "un-", word: "unpaid", pos: "adj.", meaning: "未付款的", base: "paid", baseMeaning: "已付款的", ipa: "/ˌʌnˈpeɪd/", baseIpa: "/peɪd/" },
+      { prefix: "un-", word: "unimportant", pos: "adj.", meaning: "不重要的", base: "important", baseMeaning: "重要的", ipa: "/ˌʌnɪmˈpɔːtnt/", baseIpa: "/ɪmˈpɔːtnt/" },
+      { prefix: "un-", word: "unclear", pos: "adj.", meaning: "不清楚的", base: "clear", baseMeaning: "清楚的", ipa: "/ˌʌnˈklɪə/", baseIpa: "/klɪə/" },
+      { prefix: "un-", word: "unlikely", pos: "adj.", meaning: "不太可能的", base: "likely", baseMeaning: "可能的", ipa: "/ʌnˈlaɪkli/", baseIpa: "/ˈlaɪkli/" },
+      { prefix: "un-", word: "unavoidable", pos: "adj.", meaning: "不可避免的", base: "avoidable", baseMeaning: "可避免的", ipa: "/ˌʌnəˈvɔɪdəbl/", baseIpa: "/əˈvɔɪdəbl/" },
+      { prefix: "un-", word: "unkind", pos: "adj.", meaning: "不友善的", base: "kind", baseMeaning: "友善的", ipa: "/ʌnˈkaɪnd/", baseIpa: "/kaɪnd/" },
+      { prefix: "un-", word: "unlimited", pos: "adj.", meaning: "无限制的", base: "limited", baseMeaning: "有限制的", ipa: "/ʌnˈlɪmɪtɪd/", baseIpa: "/ˈlɪmɪtɪd/" },
+      { prefix: "un-", word: "unacceptable", pos: "adj.", meaning: "不可接受的", base: "acceptable", baseMeaning: "可接受的", ipa: "/ˌʌnəkˈseptəbl/", baseIpa: "/əkˈseptəbl/" },
+      { prefix: "un-", word: "untidy", pos: "adj.", meaning: "不整洁的", base: "tidy", baseMeaning: "整洁的", ipa: "/ʌnˈtaɪdi/", baseIpa: "/ˈtaɪdi/" },
+      { prefix: "un-", word: "unfriendly", pos: "adj.", meaning: "不友好的", base: "friendly", baseMeaning: "友好的", ipa: "/ʌnˈfrendli/", baseIpa: "/ˈfrendli/" },
+      { prefix: "un-", word: "unaffordable", pos: "adj.", meaning: "负担不起的", base: "affordable", baseMeaning: "负担得起的", ipa: "/ˌʌnəˈfɔːdəbl/", baseIpa: "/əˈfɔːdəbl/" },
+      { prefix: "un-", word: "uncrowded", pos: "adj.", meaning: "不挤的", base: "crowded", baseMeaning: "拥挤的", ipa: "/ʌnˈkraʊdɪd/", baseIpa: "/ˈkraʊdɪd/" },
+      { prefix: "un-", word: "unemployed", pos: "adj.", meaning: "失业的", base: "employed", baseMeaning: "就业的", ipa: "/ˌʌnɪmˈplɔɪd/", baseIpa: "/ɪmˈplɔɪd/" },
+      { prefix: "un-", word: "unfortunate", pos: "adj.", meaning: "不幸的", base: "fortunate", baseMeaning: "幸运的", ipa: "/ʌnˈfɔːtʃənət/", baseIpa: "/ˈfɔːtʃənət/" },
+      { prefix: "un-", word: "unsafe", pos: "adj.", meaning: "不安全的", base: "safe", baseMeaning: "安全的", ipa: "/ʌnˈseɪf/", baseIpa: "/seɪf/" },
+      { prefix: "un-", word: "unfamiliar", pos: "adj.", meaning: "不熟悉的", base: "familiar", baseMeaning: "熟悉的", ipa: "/ˌʌnfəˈmɪliə/", baseIpa: "/fəˈmɪliə/" },
+      { prefix: "un-", word: "unconscious", pos: "adj.", meaning: "无意识的", base: "conscious", baseMeaning: "有意识的", ipa: "/ʌnˈkɒnʃəs/", baseIpa: "/ˈkɒnʃəs/" },
+      { prefix: "un-", word: "unemployment", pos: "n.", meaning: "失业", base: "employment", baseMeaning: "就业", ipa: "/ˌʌnɪmˈplɔɪmənt/", baseIpa: "/ɪmˈplɔɪmənt/", example: "Unemployment is likely to go on rising this year." },
+      { prefix: "un-", word: "unawareness", pos: "n.", meaning: "不知道", base: "awareness", baseMeaning: "认识", ipa: "/ˌʌnəˈweənəs/", baseIpa: "/əˈweənəs/" },
+      { prefix: "un-", word: "uncertainty", pos: "n.", meaning: "犹豫 / 不确定", base: "certainty", baseMeaning: "确实", ipa: "/ʌnˈsɜːtnti/", baseIpa: "/ˈsɜːtnti/" },
+      { prefix: "un-", word: "unlock", pos: "v.", meaning: "开锁", base: "lock", baseMeaning: "锁住", ipa: "/ʌnˈlɒk/", baseIpa: "/lɒk/", example: "The divers hoped to unlock some of the secrets of the seabed." },
+      { prefix: "un-", word: "unload", pos: "v.", meaning: "卸载", base: "load", baseMeaning: "装载", ipa: "/ʌnˈləʊd/", baseIpa: "/ləʊd/" },
+      { prefix: "un-", word: "unfold", pos: "v.", meaning: "展开", base: "fold", baseMeaning: "折叠", ipa: "/ʌnˈfəʊld/", baseIpa: "/fəʊld/" },
+      { prefix: "un-", word: "untie", pos: "v.", meaning: "打开结", base: "tie", baseMeaning: "打结", ipa: "/ʌnˈtaɪ/", baseIpa: "/taɪ/" },
+      { prefix: "dis-", word: "dishonest", pos: "adj.", meaning: "不诚实的", base: "honest", baseMeaning: "诚实的", ipa: "/dɪsˈɒnɪst/", baseIpa: "/ˈɒnɪst/", example: "Elderly people are easily cheated by dishonest salesmen." },
+      { prefix: "dis-", word: "disinterested", pos: "adj.", meaning: "公正的", base: "interested", baseMeaning: "感兴趣的", ipa: "/dɪsˈɪntrəstɪd/", baseIpa: "/ˈɪntrəstɪd/", note: "注意：disinterested ≈ impartial，不是 uninterested" },
+      { prefix: "dis-", word: "disabled", pos: "adj.", meaning: "残疾的", base: "able", baseMeaning: "能够的", ipa: "/dɪsˈeɪbld/", baseIpa: "/ˈeɪbl/" },
+      { prefix: "dis-", word: "disloyal", pos: "adj.", meaning: "不忠的", base: "loyal", baseMeaning: "忠诚的", ipa: "/dɪsˈlɔɪəl/", baseIpa: "/ˈlɔɪəl/" },
+      { prefix: "dis-", word: "disbelief", pos: "n.", meaning: "不信", base: "belief", baseMeaning: "相信", ipa: "/ˌdɪsbɪˈliːf/", baseIpa: "/bɪˈliːf/", example: "He read the news in disbelief over and over again." },
+      { prefix: "dis-", word: "disability", pos: "n.", meaning: "残疾", base: "ability", baseMeaning: "能力", ipa: "/ˌdɪsəˈbɪləti/", baseIpa: "/əˈbɪləti/" },
+      { prefix: "dis-", word: "disadvantage", pos: "n.", meaning: "缺点", base: "advantage", baseMeaning: "优点", ipa: "/ˌdɪsədˈvɑːntɪdʒ/", baseIpa: "/ədˈvɑːntɪdʒ/" },
+      { prefix: "dis-", word: "disorder", pos: "n.", meaning: "混乱", base: "order", baseMeaning: "顺序", ipa: "/dɪsˈɔːdə/", baseIpa: "/ˈɔːdə/" },
+      { prefix: "dis-", word: "disapproval", pos: "n.", meaning: "反对", base: "approval", baseMeaning: "赞成", ipa: "/ˌdɪsəˈpruːvl/", baseIpa: "/əˈpruːvl/" },
+      { prefix: "dis-", word: "disagreement", pos: "n.", meaning: "分歧", base: "agreement", baseMeaning: "同意", ipa: "/ˌdɪsəˈɡriːmənt/", baseIpa: "/əˈɡriːmənt/" },
+      { prefix: "dis-", word: "disappear", pos: "v.", meaning: "消失", base: "appear", baseMeaning: "出现", ipa: "/ˌdɪsəˈpɪə/", baseIpa: "/əˈpɪə/", example: "The sun slowly disappeared behind the horizon." },
+      { prefix: "dis-", word: "disagree", pos: "v.", meaning: "不同意", base: "agree", baseMeaning: "同意", ipa: "/ˌdɪsəˈɡriː/", baseIpa: "/əˈɡriː/" },
+      { prefix: "dis-", word: "disapprove", pos: "v.", meaning: "反对", base: "approve", baseMeaning: "赞成", ipa: "/ˌdɪsəˈpruːv/", baseIpa: "/əˈpruːv/" },
+      { prefix: "dis-", word: "disbelieve", pos: "v.", meaning: "不信", base: "believe", baseMeaning: "相信", ipa: "/ˌdɪsbɪˈliːv/", baseIpa: "/bɪˈliːv/" },
+      { prefix: "dis-", word: "dislike", pos: "v.", meaning: "不喜欢", base: "like", baseMeaning: "喜欢", ipa: "/dɪsˈlaɪk/", baseIpa: "/laɪk/" },
+      { prefix: "dis-", word: "discover", pos: "v.", meaning: "发现", base: "cover", baseMeaning: "覆盖", ipa: "/dɪˈskʌvə/", baseIpa: "/ˈkʌvə/" },
+      { prefix: "dis-", word: "disarm", pos: "v.", meaning: "解除武装", base: "arm", baseMeaning: "武装", ipa: "/dɪsˈɑːm/", baseIpa: "/ɑːm/" },
+      { prefix: "dis-", word: "disconnect", pos: "v.", meaning: "切断", base: "connect", baseMeaning: "连接", ipa: "/ˌdɪskəˈnekt/", baseIpa: "/kəˈnekt/" },
+      { prefix: "dis-", word: "disprove", pos: "v.", meaning: "反驳", base: "prove", baseMeaning: "证明", ipa: "/ˌdɪsˈpruːv/", baseIpa: "/pruːv/" },
+      { prefix: "dis-", word: "disengage", pos: "v.", meaning: "脱离", base: "engage", baseMeaning: "参与", ipa: "/ˌdɪsɪnˈɡeɪdʒ/", baseIpa: "/ɪnˈɡeɪdʒ/" },
+      { prefix: "dis-", word: "disclaim", pos: "v.", meaning: "否认", base: "claim", baseMeaning: "声称", ipa: "/dɪsˈkleɪm/", baseIpa: "/kleɪm/" },
+      { prefix: "de-", word: "deforest", pos: "v.", meaning: "砍掉森林", base: "forest", baseMeaning: "森林", ipa: "/ˌdiːˈfɒrɪst/", baseIpa: "/ˈfɒrɪst/", example: "Two thirds of the region has been deforested in the past decade." },
+      { prefix: "de-", word: "decode", pos: "v.", meaning: "破除密码", base: "code", baseMeaning: "密码", ipa: "/ˌdiːˈkəʊd/", baseIpa: "/kəʊd/" },
+      { prefix: "de-", word: "devalue", pos: "v.", meaning: "使贬值", base: "value", baseMeaning: "价值", ipa: "/ˌdiːˈvæljuː/", baseIpa: "/ˈvæljuː/" },
+      { prefix: "de-", word: "deport", pos: "v.", meaning: "驱逐出境", base: "port", baseMeaning: "港口", ipa: "/dɪˈpɔːt/", baseIpa: "/pɔːt/" },
+      { prefix: "de-", word: "defame", pos: "v.", meaning: "诽谤", base: "fame", baseMeaning: "名声", ipa: "/dɪˈfeɪm/", baseIpa: "/feɪm/" },
+      { prefix: "de-", word: "deactivate", pos: "v.", meaning: "使无效", base: "activate", baseMeaning: "激活", ipa: "/ˌdiːˈæktɪveɪt/", baseIpa: "/ˈæktɪveɪt/" },
+      { prefix: "mis-", word: "misunderstand", pos: "v.", meaning: "误解", base: "understand", baseMeaning: "理解", ipa: "/ˌmɪsʌndəˈstænd/", baseIpa: "/ˌʌndəˈstænd/", example: "Some of you may misunderstand what I'm asking." },
+      { prefix: "mis-", word: "misuse", pos: "v.", meaning: "误用", base: "use", baseMeaning: "使用", ipa: "/ˌmɪsˈjuːz/", baseIpa: "/juːz/" },
+      { prefix: "mis-", word: "mismatch", pos: "v.", meaning: "误配", base: "match", baseMeaning: "匹配", ipa: "/ˈmɪsmætʃ/", baseIpa: "/mætʃ/" },
+      { prefix: "mis-", word: "misspell", pos: "v.", meaning: "拼错", base: "spell", baseMeaning: "拼写", ipa: "/ˌmɪsˈspel/", baseIpa: "/spel/" },
+      { prefix: "mis-", word: "mislead", pos: "v.", meaning: "误导", base: "lead", baseMeaning: "引导", ipa: "/ˌmɪsˈliːd/", baseIpa: "/liːd/" },
+      { prefix: "mis-", word: "misjudge", pos: "v.", meaning: "误判", base: "judge", baseMeaning: "判断", ipa: "/ˌmɪsˈdʒʌdʒ/", baseIpa: "/dʒʌdʒ/" },
+    ];
+
+    const PREFIXES = ["all", "in-", "im-", "ir-", "il-", "un-", "dis-", "de-", "mis-"];
+    const PREFIX_NOTE = {
+      "in-": "常置于形容词或名词前，表示否定或相反",
+      "im-": "常用于 p / m / b 开头的词根前",
+      "ir-": "常用于 r 开头的词根前",
+      "il-": "常用于 l 开头的词根前",
+      "un-": "可用于形容词、名词、动词",
+      "dis-": "否定或相反；注意 disinterested ≠ uninterested",
+      "de-": "常置于动词前，表示去除或否定",
+      "mis-": "常置于动词前，表示错误",
+    };
+
+    const STORE_KEY = "neg-affix-known-v1";
+    let audioEl = null;
+    let speakToken = 0;
+
+    const state = {
+      mode: "browse",
+      prefix: "all",
+      known: loadKnown(),
+      flash: { queue: [], index: 0, flipped: false },
+      quiz: { queue: [], index: 0, answered: false, choices: [], score: 0, picked: null },
+    };
+
+    function loadKnown() {
+      try {
+        const raw = localStorage.getItem(STORE_KEY);
+        return raw ? new Set(JSON.parse(raw)) : new Set();
+      } catch {
+        return new Set();
+      }
+    }
+
+    function saveKnown() {
+      localStorage.setItem(STORE_KEY, JSON.stringify([...state.known]));
+    }
+
+    function filtered() {
+      return state.prefix === "all"
+        ? WORDS.slice()
+        : WORDS.filter((w) => w.prefix === state.prefix);
+    }
+
+    function shuffle(arr) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    // Single audio source only — avoid TTS + online voice playing twice
+    function speak(text, btn) {
+      if (!text) return;
+      const token = ++speakToken;
+
+      document.querySelectorAll(".speak-btn.playing, .btn.playing").forEach((b) => b.classList.remove("playing"));
+      if (btn) btn.classList.add("playing");
+
+      const clearPlaying = () => {
+        if (token !== speakToken) return;
+        if (btn) btn.classList.remove("playing");
+      };
+
+      if (window.speechSynthesis) window.speechSynthesis.cancel();
+      if (!audioEl) audioEl = new Audio();
+      try {
+        audioEl.pause();
+        audioEl.currentTime = 0;
+      } catch (_) {}
+
+      audioEl.onended = clearPlaying;
+      audioEl.onerror = clearPlaying;
+      audioEl.src = "https://dict.youdao.com/dictvoice?audio=" + encodeURIComponent(text) + "&type=2";
+      audioEl.play().catch(clearPlaying);
+    }
+
+    function updateStats() {
+      const list = filtered();
+      const known = list.filter((w) => state.known.has(w.word)).length;
+      document.getElementById("stats").textContent =
+        `已掌握 ${known}/${list.length} · 共 ${WORDS.length}`;
+    }
+
+    function renderFilters() {
+      const el = document.getElementById("filters");
+      el.innerHTML = PREFIXES.map((p) => {
+        const count = p === "all" ? WORDS.length : WORDS.filter((w) => w.prefix === p).length;
+        const label = p === "all" ? `全部 ${count}` : `${p}${count}`;
+        return `<button type="button" class="chip ${state.prefix === p ? "active" : ""}" data-prefix="${p}">${label}</button>`;
+      }).join("");
+    }
+
+    function render() {
+      updateStats();
+      const main = document.getElementById("main");
+      if (state.mode === "browse") main.innerHTML = renderBrowse();
+      else if (state.mode === "flash") main.innerHTML = renderFlash();
+      else main.innerHTML = renderQuiz();
+    }
+
+    function speakBtn(word) {
+      return `<button type="button" class="speak-btn" data-speak="${word}" aria-label="朗读 ${word}">🔊</button>`;
+    }
+
+    function renderBrowse() {
+      const list = filtered();
+      if (!list.length) return `<div class="empty">这个词缀下没有词。</div>`;
+
+      const banner = state.prefix === "all"
+        ? `<div class="lesson-banner">每组是<strong>两个单词</strong>：左边原词 → 右边加否定前缀后的词。两边都有词性与音标，点 🔊 听该词发音。</div>`
+        : `<div class="lesson-banner"><strong>${state.prefix}</strong> · ${PREFIX_NOTE[state.prefix] || ""}</div>`;
+
+      const groups = {};
+      for (const w of list) (groups[w.prefix] ||= []).push(w);
+
+      return banner + Object.entries(groups).map(([prefix, words]) => `
+        <section class="group">
+          <div class="group-head">
+            <h2>${prefix}</h2>
+            <span>${words.length} 组</span>
+          </div>
+          <div class="pair-list">
+            ${words.map((w) => `
+              <article class="pair ${state.known.has(w.word) ? "known" : ""}">
+                <div class="pair-row">
+                  <div class="side">
+                    <div class="en">${w.base}</div>
+                    <div class="meta-row">${speakBtn(w.base)} <span class="pos-badge">${w.pos}</span></div>
+                    <div class="ipa">${w.baseIpa || ""}</div>
+                    <div class="zh">${w.baseMeaning}</div>
+                  </div>
+                  <div class="arrow">→</div>
+                  <div class="side">
+                    <div class="en">${w.word}</div>
+                    <div class="meta-row">${speakBtn(w.word)} <span class="pos-badge">${w.pos}</span></div>
+                    <div class="ipa">${w.ipa || ""}</div>
+                    <div class="zh">${w.meaning}</div>
+                  </div>
+                </div>
+                <div class="pair-actions">
+                  <button type="button" class="mark-btn" data-toggle="${w.word}">
+                    ${state.known.has(w.word) ? "取消掌握" : "标记掌握"}
+                  </button>
+                </div>
+              </article>
+            `).join("")}
+          </div>
+        </section>
+      `).join("");
+    }
+
+    function ensureFlashQueue() {
+      if (!state.flash.queue.length) {
+        state.flash.queue = shuffle(filtered());
+        state.flash.index = 0;
+        state.flash.flipped = false;
+      }
+    }
+
+    function renderFlash() {
+      ensureFlashQueue();
+      const q = state.flash.queue;
+      if (!q.length) return `<div class="empty">没有可背的词，换个词缀试试。</div>`;
+
+      if (state.flash.index >= q.length) {
+        return `
+          <div class="done-box">
+            <h3>本轮闪卡完成</h3>
+            <p>共过了 ${q.length} 个词。</p>
+            <button type="button" class="btn primary" data-flash-restart>再来一轮</button>
+          </div>`;
+      }
+
+      const w = q[state.flash.index];
+      const pct = Math.round((state.flash.index / q.length) * 100);
+
+      return `
+        <div class="study-wrap">
+          <div class="progress-bar"><i style="width:${pct}%"></i></div>
+          <div class="meta-row">
+            <span>${state.flash.index + 1} / ${q.length}</span>
+            <span>${w.prefix} · ${w.pos}</span>
+          </div>
+          <div class="card ${state.flash.flipped ? "flipped" : ""}" id="flash-card" role="button" tabindex="0" aria-label="翻转卡片">
+            <div class="card-inner">
+              <div class="face front">
+                <div class="tag">${w.prefix} · ${w.pos}</div>
+                <div class="word">${w.word}</div>
+                <div class="flash-ipa">${w.ipa || ""}</div>
+                <div class="hint-tap">点卡片翻转</div>
+              </div>
+              <div class="face back">
+                <div class="tag">${w.prefix} · ${w.pos}</div>
+                <div class="meaning">${w.meaning}</div>
+                <div class="flash-ipa">${w.ipa || ""}</div>
+                <div class="base-hint">${w.base} ${w.pos} ${w.baseIpa || ""}（${w.baseMeaning}）→ ${w.word} ${w.pos} ${w.ipa || ""}（${w.meaning}）</div>
+                ${w.note ? `<div class="example">${w.note}</div>` : ""}
+                ${w.example ? `<div class="example">“${w.example}”</div>` : ""}
+              </div>
+            </div>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn bad" data-flash-again>再练</button>
+            <button type="button" class="btn ghost" data-speak="${w.word}">🔊 发音</button>
+            <button type="button" class="btn ok" data-flash-know>认识</button>
+          </div>
+        </div>`;
+    }
+
+    function ensureQuizQueue() {
+      if (!state.quiz.queue.length) {
+        state.quiz.queue = shuffle(filtered());
+        state.quiz.index = 0;
+        state.quiz.answered = false;
+        state.quiz.score = 0;
+        state.quiz.picked = null;
+        state.quiz.choices = makeChoices(state.quiz.queue[0]);
+      }
+    }
+
+    function makeChoices(correct) {
+      if (!correct) return [];
+      const pool = WORDS.filter((w) => w.word !== correct.word);
+      return shuffle([correct, ...shuffle(pool).slice(0, 3)]);
+    }
+
+    function renderQuiz() {
+      ensureQuizQueue();
+      const q = state.quiz.queue;
+      if (!q.length) return `<div class="empty">没有可测的词。</div>`;
+
+      if (state.quiz.index >= q.length) {
+        return `
+          <div class="done-box">
+            <h3>测验结束</h3>
+            <p>正确 ${state.quiz.score} / ${q.length}</p>
+            <button type="button" class="btn primary" data-quiz-restart>再测一轮</button>
+          </div>`;
+      }
+
+      const w = q[state.quiz.index];
+      const pct = Math.round((state.quiz.index / q.length) * 100);
+
+      return `
+        <div class="study-wrap">
+          <div class="progress-bar"><i style="width:${pct}%"></i></div>
+          <div class="meta-row">
+            <span>${state.quiz.index + 1} / ${q.length}</span>
+            <span>得分 ${state.quiz.score}</span>
+          </div>
+          <div class="quiz-prompt">
+            <div class="tag" style="display:inline-block">${w.prefix} · ${w.pos}</div>
+            <div class="big">${w.meaning}</div>
+            <div class="pos">原词：${w.base} ${w.pos} ${w.baseIpa || ""}（${w.baseMeaning}）</div>
+          </div>
+          <div class="choices">
+            ${state.quiz.choices.map((c) => {
+              let cls = "choice";
+              if (state.quiz.answered) {
+                if (c.word === w.word) cls += " correct";
+                else if (c.word === state.quiz.picked) cls += " wrong";
+              }
+              return `
+                <button type="button" class="${cls}" data-pick="${c.word}" ${state.quiz.answered ? "disabled" : ""}>
+                  <span>${c.word} <small style="color:var(--muted);font-weight:500">${c.pos}</small></span>
+                  <span class="choice-speak" data-speak="${c.word}" data-stop>🔊</span>
+                </button>`;
+            }).join("")}
+          </div>
+          <div class="feedback">
+            ${state.quiz.answered
+              ? (state.quiz.picked === w.word
+                  ? "正确"
+                  : `正确答案是 <strong>${w.word}</strong>${w.note ? " · " + w.note : ""}`)
+              : "根据中文义选择否定前缀词"}
+          </div>
+          ${state.quiz.answered
+            ? `<div class="actions" style="grid-template-columns:1fr 1fr">
+                <button type="button" class="btn ghost" data-speak="${w.word}">🔊 听正确发音</button>
+                <button type="button" class="btn primary" data-quiz-next>下一题</button>
+              </div>`
+            : ""}
+        </div>`;
+    }
+
+    // Course sheet (mobile)
+    const sheet = document.getElementById("courseSheet");
+    const backdrop = document.getElementById("backdrop");
+
+    function openSheet() {
+      sheet.hidden = false;
+      backdrop.hidden = false;
+      requestAnimationFrame(() => {
+        sheet.classList.add("open");
+        backdrop.classList.add("open");
+      });
+    }
+
+    function closeSheet() {
+      sheet.classList.remove("open");
+      backdrop.classList.remove("open");
+      setTimeout(() => {
+        sheet.hidden = true;
+        backdrop.hidden = true;
+      }, 280);
+    }
+
+    document.getElementById("openCourse").addEventListener("click", openSheet);
+    backdrop.addEventListener("click", closeSheet);
+
+    document.querySelector(".modes").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-mode]");
+      if (!btn) return;
+      state.mode = btn.dataset.mode;
+      document.querySelectorAll(".modes button").forEach((b) => b.classList.toggle("active", b === btn));
+      state.flash.queue = [];
+      state.quiz.queue = [];
+      render();
+    });
+
+    document.getElementById("filters").addEventListener("click", (e) => {
+      const btn = e.target.closest("button[data-prefix]");
+      if (!btn) return;
+      state.prefix = btn.dataset.prefix;
+      state.flash.queue = [];
+      state.quiz.queue = [];
+      renderFilters();
+      render();
+    });
+
+    document.getElementById("main").addEventListener("click", (e) => {
+      const speakEl = e.target.closest("[data-speak]");
+      if (speakEl) {
+        e.preventDefault();
+        e.stopPropagation();
+        const btn = speakEl.classList.contains("speak-btn") || speakEl.classList.contains("btn") || speakEl.classList.contains("choice-speak")
+          ? speakEl
+          : null;
+        speak(speakEl.dataset.speak, btn);
+        return;
+      }
+
+      const toggle = e.target.closest("[data-toggle]");
+      if (toggle) {
+        const word = toggle.dataset.toggle;
+        if (state.known.has(word)) state.known.delete(word);
+        else state.known.add(word);
+        saveKnown();
+        render();
+        return;
+      }
+
+      if (e.target.closest("#flash-card")) {
+        state.flash.flipped = !state.flash.flipped;
+        if (state.flash.flipped) {
+          const cur = state.flash.queue[state.flash.index];
+          if (cur) speak(cur.word);
+        }
+        render();
+        return;
+      }
+
+      if (e.target.closest("[data-flash-restart]")) {
+        state.flash.queue = [];
+        render();
+        return;
+      }
+
+      if (e.target.closest("[data-flash-again]")) {
+        const q = state.flash.queue;
+        const cur = q[state.flash.index];
+        if (cur) {
+          state.known.delete(cur.word);
+          saveKnown();
+          q.push(cur);
+        }
+        state.flash.index += 1;
+        state.flash.flipped = false;
+        render();
+        return;
+      }
+
+      if (e.target.closest("[data-flash-know]")) {
+        const cur = state.flash.queue[state.flash.index];
+        if (cur) {
+          state.known.add(cur.word);
+          saveKnown();
+        }
+        state.flash.index += 1;
+        state.flash.flipped = false;
+        render();
+        return;
+      }
+
+      const pick = e.target.closest("[data-pick]");
+      if (pick && !state.quiz.answered && !e.target.closest("[data-stop]")) {
+        const w = state.quiz.queue[state.quiz.index];
+        state.quiz.picked = pick.dataset.pick;
+        state.quiz.answered = true;
+        if (state.quiz.picked === w.word) {
+          state.quiz.score += 1;
+          state.known.add(w.word);
+        } else {
+          state.known.delete(w.word);
+        }
+        saveKnown();
+        speak(w.word);
+        render();
+        return;
+      }
+
+      if (e.target.closest("[data-quiz-next]")) {
+        state.quiz.index += 1;
+        state.quiz.answered = false;
+        state.quiz.picked = null;
+        state.quiz.choices = makeChoices(state.quiz.queue[state.quiz.index]);
+        render();
+        return;
+      }
+
+      if (e.target.closest("[data-quiz-restart]")) {
+        state.quiz.queue = [];
+        render();
+      }
+    });
+
+    renderFilters();
+    render();
+  </script>
+</body>
+</html>
