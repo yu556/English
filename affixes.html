@@ -232,6 +232,32 @@
       font-variant-numeric: tabular-nums;
     }
 
+    .toolbar-right {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hide-btn {
+      font: inherit;
+      cursor: pointer;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 7px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      min-height: 36px;
+    }
+
+    .hide-btn.active {
+      background: #fff7ed;
+      border-color: #fdba74;
+      color: #c2410c;
+    }
+
     .filters {
       display: flex;
       flex-wrap: nowrap;
@@ -358,6 +384,72 @@
       margin-top: 3px;
     }
     .pair .zh { color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
+
+    /* 只看中文 */
+    .main.hide-en .pair .en,
+    .main.hide-en .pair .meta-row,
+    .main.hide-en .pair .ipa,
+    .main.hide-en .pair .arrow,
+    .main.hide-en .pair-actions {
+      display: none !important;
+    }
+
+    .main.hide-en .pair .zh {
+      color: var(--ink);
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-top: 0;
+    }
+
+    .main.hide-en .pair-row {
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .main.hide-en .pair {
+      cursor: pointer;
+      position: relative;
+    }
+
+    .main.hide-en .pair.revealed .en,
+    .main.hide-en .pair.revealed .meta-row,
+    .main.hide-en .pair.revealed .ipa,
+    .main.hide-en .pair.revealed .pair-actions {
+      display: flex !important;
+    }
+
+    .main.hide-en .pair.revealed .ipa {
+      display: block !important;
+    }
+
+    .main.hide-en .pair.revealed .en {
+      display: block !important;
+    }
+
+    .main.hide-en .pair.revealed .zh {
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 400;
+      margin-top: 2px;
+    }
+
+    .main.hide-en .pair.revealed .arrow {
+      display: block !important;
+    }
+
+    .main.hide-en .pair.revealed .pair-row {
+      grid-template-columns: 1fr auto 1fr;
+    }
+
+    @media (max-width: 860px) {
+      .main.hide-en .pair-row,
+      .main.hide-en .pair.revealed .pair-row {
+        grid-template-columns: 1fr;
+      }
+      .main.hide-en .pair.revealed .arrow {
+        display: none !important;
+      }
+    }
     .flash-ipa {
       margin-top: 10px;
       font-family: "IBM Plex Mono", ui-monospace, monospace;
@@ -675,7 +767,10 @@
               <button type="button" data-mode="flash">闪卡</button>
               <button type="button" data-mode="quiz">测验</button>
             </div>
-            <div class="stats" id="stats">—</div>
+            <div class="toolbar-right">
+              <button type="button" class="hide-btn" id="hideEnBtn" aria-pressed="false" title="隐藏英文，只看中文">只看中文</button>
+              <div class="stats" id="stats">—</div>
+            </div>
           </div>
 
           <div class="filters" id="filters" aria-label="词缀筛选"></div>
@@ -823,12 +918,14 @@
     };
 
     const STORE_KEY = "neg-affix-known-v1";
+    const HIDE_KEY = "neg-affix-hide-en-v1";
     let audioEl = null;
     let speakToken = 0;
 
     const state = {
       mode: "browse",
       prefix: "all",
+      hideEn: localStorage.getItem(HIDE_KEY) === "1",
       known: loadKnown(),
       flash: { queue: [], index: 0, flipped: false },
       quiz: { queue: [], index: 0, answered: false, choices: [], score: 0, picked: null },
@@ -904,9 +1001,21 @@
       }).join("");
     }
 
+    function syncHideBtn() {
+      const btn = document.getElementById("hideEnBtn");
+      if (!btn) return;
+      const show = state.mode === "browse";
+      btn.hidden = !show;
+      btn.classList.toggle("active", state.hideEn);
+      btn.setAttribute("aria-pressed", state.hideEn ? "true" : "false");
+      btn.textContent = state.hideEn ? "显示英文" : "只看中文";
+    }
+
     function render() {
       updateStats();
+      syncHideBtn();
       const main = document.getElementById("main");
+      main.classList.toggle("hide-en", state.mode === "browse" && state.hideEn);
       if (state.mode === "browse") main.innerHTML = renderBrowse();
       else if (state.mode === "flash") main.innerHTML = renderFlash();
       else main.innerHTML = renderQuiz();
@@ -920,7 +1029,9 @@
       const list = filtered();
       if (!list.length) return `<div class="empty">这个词缀下没有词。</div>`;
 
-      const banner = state.prefix === "all"
+      const banner = state.hideEn
+        ? `<div class="lesson-banner">已隐藏英文，只显示中文。点卡片可临时查看英文答案。</div>`
+        : state.prefix === "all"
         ? `<div class="lesson-banner">每组是<strong>两个单词</strong>：左边原词 → 右边加否定前缀后的词。两边都有词性与音标，点 🔊 听该词发音。</div>`
         : `<div class="lesson-banner"><strong>${state.prefix}</strong> · ${PREFIX_NOTE[state.prefix] || ""}</div>`;
 
@@ -1122,6 +1233,12 @@
     document.getElementById("openCourse").addEventListener("click", openSheet);
     backdrop.addEventListener("click", closeSheet);
 
+    document.getElementById("hideEnBtn").addEventListener("click", () => {
+      state.hideEn = !state.hideEn;
+      localStorage.setItem(HIDE_KEY, state.hideEn ? "1" : "0");
+      render();
+    });
+
     document.querySelector(".modes").addEventListener("click", (e) => {
       const btn = e.target.closest("button[data-mode]");
       if (!btn) return;
@@ -1162,6 +1279,15 @@
         saveKnown();
         render();
         return;
+      }
+
+      // 只看中文时：点卡片临时显示/隐藏英文
+      if (state.mode === "browse" && state.hideEn) {
+        const pair = e.target.closest(".pair");
+        if (pair && !e.target.closest("[data-toggle],[data-speak]")) {
+          pair.classList.toggle("revealed");
+          return;
+        }
       }
 
       if (e.target.closest("#flash-card")) {
