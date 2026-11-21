@@ -396,8 +396,9 @@
 
     .main.hide-en .pair .zh {
       color: var(--ink);
-      font-size: 1.05rem;
+      font-size: 0.92rem;
       font-weight: 600;
+      line-height: 1.45;
       margin-top: 0;
     }
 
@@ -586,16 +587,69 @@
     }
 
     .pos { margin-top: 8px; color: var(--muted); font-size: 0.9rem; }
-    .meaning { font-size: 1.3rem; font-weight: 600; margin-top: 6px; }
+    .meaning { font-size: 1.2rem; font-weight: 600; margin-top: 6px; line-height: 1.45; }
     .base-hint { margin-top: 14px; color: var(--muted); font-size: 0.9rem; line-height: 1.45; }
+    .flash-pair {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 8px;
+      align-items: start;
+      text-align: left;
+    }
+    .flash-pair .fp-arrow {
+      color: #a8a29e;
+      padding-top: 10px;
+      font-size: 1rem;
+      text-align: center;
+    }
+    .flash-pair .fp-word {
+      font-family: Fraunces, Georgia, serif;
+      font-size: clamp(1.15rem, 3.6vw, 1.55rem);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      word-break: break-word;
+    }
+    .flash-pair .fp-ipa {
+      margin-top: 6px;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.78rem;
+      color: #0f766e;
+    }
+    .flash-pair .fp-zh {
+      margin-top: 8px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      line-height: 1.45;
+      color: var(--ink);
+    }
+    .face.front .flash-pair { text-align: center; }
+    .face.front .flash-pair .fp-zh { display: none; }
+    .meanings-line {
+      font-size: 1.05rem;
+      font-weight: 600;
+      line-height: 1.45;
+      margin: 8px 0 4px;
+    }
+    @media (max-width: 560px) {
+      .flash-pair {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        text-align: center;
+      }
+      .flash-pair .fp-arrow { display: none; }
+    }
     .example { margin-top: 10px; font-size: 0.88rem; color: #44403c; line-height: 1.5; max-width: 34ch; }
     .hint-tap { margin-top: 16px; font-size: 0.78rem; color: #a8a29e; }
 
     .actions {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
     }
+
+    .actions.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+    .actions.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
 
     .btn {
       border-radius: 12px;
@@ -668,6 +722,51 @@
       min-height: 1.4em;
     }
 
+    .spell-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .spell-input {
+      width: 100%;
+      font: inherit;
+      font-size: 1.15rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1.5px solid var(--line);
+      background: #fff;
+      color: var(--ink);
+      outline: none;
+      min-height: 52px;
+    }
+
+    .spell-input:focus {
+      border-color: #5eead4;
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+    }
+
+    .spell-input.ok {
+      border-color: #86efac;
+      background: #f0fdf4;
+      color: var(--ok);
+    }
+
+    .spell-input.bad {
+      border-color: #fca5a5;
+      background: #fef2f2;
+      color: var(--danger);
+    }
+
+    .spell-answer {
+      text-align: center;
+      font-family: Fraunces, Georgia, serif;
+      font-size: 1.35rem;
+      margin-top: 4px;
+    }
+
     .empty { text-align: center; color: var(--muted); padding: 48px 12px; }
     .done-box { text-align: center; padding: 36px 12px; }
     .done-box h3 {
@@ -719,8 +818,9 @@
         gap: 6px;
       }
       .pair .arrow { display: none; }
-      .actions { grid-template-columns: 1fr 1fr; }
-      .actions .btn.ghost { grid-column: 1 / -1; }
+      .actions,
+      .actions.cols-3,
+      .actions.cols-4 { grid-template-columns: 1fr 1fr; }
       .pair-list { grid-template-columns: 1fr; }
     }
   </style>
@@ -766,6 +866,7 @@
               <button type="button" data-mode="browse" class="active">浏览</button>
               <button type="button" data-mode="flash">闪卡</button>
               <button type="button" data-mode="quiz">测验</button>
+              <button type="button" data-mode="spell">拼写</button>
             </div>
             <div class="toolbar-right">
               <button type="button" class="hide-btn" id="hideEnBtn" aria-pressed="false" title="隐藏英文，只看中文">只看中文</button>
@@ -798,111 +899,111 @@
 
   <script>
     const WORDS = [
-      { prefix: "in-", word: "inexpensive", pos: "adj.", meaning: "便宜的", base: "expensive", baseMeaning: "昂贵的", ipa: "/ˌɪnɪkˈspensɪv/", baseIpa: "/ɪkˈspensɪv/", example: "Check out the various inexpensive ways to tour the city." },
-      { prefix: "in-", word: "incorrect", pos: "adj.", meaning: "不正确的", base: "correct", baseMeaning: "正确的", ipa: "/ˌɪnkəˈrekt/", baseIpa: "/kəˈrekt/" },
-      { prefix: "in-", word: "indirect", pos: "adj.", meaning: "间接的", base: "direct", baseMeaning: "直接的", ipa: "/ˌɪndəˈrekt/", baseIpa: "/dəˈrekt/" },
-      { prefix: "in-", word: "inactive", pos: "adj.", meaning: "不活跃的", base: "active", baseMeaning: "活跃的", ipa: "/ɪnˈæktɪv/", baseIpa: "/ˈæktɪv/" },
-      { prefix: "in-", word: "inaccurate", pos: "adj.", meaning: "不准确的", base: "accurate", baseMeaning: "准确的", ipa: "/ɪnˈækjərət/", baseIpa: "/ˈækjərət/" },
-      { prefix: "in-", word: "independent", pos: "adj.", meaning: "独立的", base: "dependent", baseMeaning: "依靠的", ipa: "/ˌɪndɪˈpendənt/", baseIpa: "/dɪˈpendənt/" },
-      { prefix: "in-", word: "inconvenient", pos: "adj.", meaning: "不便的", base: "convenient", baseMeaning: "方便的", ipa: "/ˌɪnkənˈviːniənt/", baseIpa: "/kənˈviːniənt/" },
-      { prefix: "in-", word: "inappropriate", pos: "adj.", meaning: "不合适的", base: "appropriate", baseMeaning: "合适的", ipa: "/ˌɪnəˈprəʊpriət/", baseIpa: "/əˈprəʊpriət/" },
-      { prefix: "in-", word: "invisible", pos: "adj.", meaning: "看不见的", base: "visible", baseMeaning: "可见的", ipa: "/ɪnˈvɪzəbl/", baseIpa: "/ˈvɪzəbl/" },
-      { prefix: "in-", word: "inefficient", pos: "adj.", meaning: "效率低的", base: "efficient", baseMeaning: "高效的", ipa: "/ˌɪnɪˈfɪʃnt/", baseIpa: "/ɪˈfɪʃnt/" },
-      { prefix: "in-", word: "incomplete", pos: "adj.", meaning: "不完全的", base: "complete", baseMeaning: "完全的", ipa: "/ˌɪnkəmˈpliːt/", baseIpa: "/kəmˈpliːt/" },
-      { prefix: "in-", word: "inconvenience", pos: "n.", meaning: "不便", base: "convenience", baseMeaning: "方便", ipa: "/ˌɪnkənˈviːniəns/", baseIpa: "/kənˈviːniəns/", example: "The inconvenience caused by the machine was acceptable." },
-      { prefix: "in-", word: "inaccuracy", pos: "n.", meaning: "不精确", base: "accuracy", baseMeaning: "准确性", ipa: "/ɪnˈækjərəsi/", baseIpa: "/ˈækjərəsi/" },
-      { prefix: "in-", word: "independence", pos: "n.", meaning: "独立", base: "dependence", baseMeaning: "依靠", ipa: "/ˌɪndɪˈpendəns/", baseIpa: "/dɪˈpendəns/" },
-      { prefix: "in-", word: "inability", pos: "n.", meaning: "无能", base: "ability", baseMeaning: "能力", ipa: "/ˌɪnəˈbɪləti/", baseIpa: "/əˈbɪləti/" },
-      { prefix: "in-", word: "incompetence", pos: "n.", meaning: "无能", base: "competence", baseMeaning: "能力", ipa: "/ɪnˈkɒmpɪtəns/", baseIpa: "/ˈkɒmpɪtəns/" },
-      { prefix: "in-", word: "injustice", pos: "n.", meaning: "不公平", base: "justice", baseMeaning: "公平", ipa: "/ɪnˈdʒʌstɪs/", baseIpa: "/ˈdʒʌstɪs/" },
-      { prefix: "im-", word: "impossible", pos: "adj.", meaning: "不可能的", base: "possible", baseMeaning: "可能的", ipa: "/ɪmˈpɒsəbl/", baseIpa: "/ˈpɒsəbl/", example: "She found it impossible to finish all these tasks." },
-      { prefix: "im-", word: "impolite", pos: "adj.", meaning: "不礼貌的", base: "polite", baseMeaning: "礼貌的", ipa: "/ˌɪmpəˈlaɪt/", baseIpa: "/pəˈlaɪt/" },
-      { prefix: "im-", word: "impatient", pos: "adj.", meaning: "不耐心的", base: "patient", baseMeaning: "耐心的", ipa: "/ɪmˈpeɪʃnt/", baseIpa: "/ˈpeɪʃnt/" },
-      { prefix: "im-", word: "imperfect", pos: "adj.", meaning: "不完美的", base: "perfect", baseMeaning: "完美的", ipa: "/ɪmˈpɜːfɪkt/", baseIpa: "/ˈpɜːfɪkt/" },
-      { prefix: "im-", word: "improper", pos: "adj.", meaning: "不合适的", base: "proper", baseMeaning: "合适的", ipa: "/ɪmˈprɒpə/", baseIpa: "/ˈprɒpə/" },
-      { prefix: "im-", word: "impractical", pos: "adj.", meaning: "不切实际的", base: "practical", baseMeaning: "实际的", ipa: "/ɪmˈpræktɪkl/", baseIpa: "/ˈpræktɪkl/" },
-      { prefix: "im-", word: "immeasurable", pos: "adj.", meaning: "不可测量的", base: "measurable", baseMeaning: "可测量的", ipa: "/ɪˈmeʒərəbl/", baseIpa: "/ˈmeʒərəbl/" },
-      { prefix: "im-", word: "immoral", pos: "adj.", meaning: "不道德的", base: "moral", baseMeaning: "道德的", ipa: "/ɪˈmɒrəl/", baseIpa: "/ˈmɒrəl/" },
-      { prefix: "im-", word: "immature", pos: "adj.", meaning: "不成熟的", base: "mature", baseMeaning: "成熟的", ipa: "/ˌɪməˈtʃʊə/", baseIpa: "/məˈtʃʊə/" },
-      { prefix: "im-", word: "immovable", pos: "adj.", meaning: "固定的", base: "movable", baseMeaning: "可移动的", ipa: "/ɪˈmuːvəbl/", baseIpa: "/ˈmuːvəbl/" },
-      { prefix: "im-", word: "immobile", pos: "adj.", meaning: "静止的", base: "mobile", baseMeaning: "可移动的", ipa: "/ɪˈməʊbaɪl/", baseIpa: "/ˈməʊbaɪl/" },
-      { prefix: "ir-", word: "irregular", pos: "adj.", meaning: "不规律的", base: "regular", baseMeaning: "规律的", ipa: "/ɪˈreɡjələ/", baseIpa: "/ˈreɡjələ/", example: "The schedule for the project meetings is irregular." },
-      { prefix: "ir-", word: "irresponsible", pos: "adj.", meaning: "不负责的", base: "responsible", baseMeaning: "负责的", ipa: "/ˌɪrɪˈspɒnsəbl/", baseIpa: "/rɪˈspɒnsəbl/" },
-      { prefix: "ir-", word: "irreplaceable", pos: "adj.", meaning: "不可替代的", base: "replaceable", baseMeaning: "可替代的", ipa: "/ˌɪrɪˈpleɪsəbl/", baseIpa: "/rɪˈpleɪsəbl/" },
-      { prefix: "ir-", word: "irresistible", pos: "adj.", meaning: "无法抗拒的", base: "resistible", baseMeaning: "可抵抗的", ipa: "/ˌɪrɪˈzɪstəbl/", baseIpa: "/rɪˈzɪstəbl/" },
-      { prefix: "ir-", word: "irrelevant", pos: "adj.", meaning: "不相关的", base: "relevant", baseMeaning: "相关的", ipa: "/ɪˈreləvənt/", baseIpa: "/ˈreləvənt/" },
-      { prefix: "il-", word: "illegal", pos: "adj.", meaning: "违法的", base: "legal", baseMeaning: "合法的", ipa: "/ɪˈliːɡl/", baseIpa: "/ˈliːɡl/", example: "This would make it illegal to import these types of snakes." },
-      { prefix: "il-", word: "illogical", pos: "adj.", meaning: "无逻辑的", base: "logical", baseMeaning: "有逻辑的", ipa: "/ɪˈlɒdʒɪkl/", baseIpa: "/ˈlɒdʒɪkl/" },
-      { prefix: "un-", word: "uninterested", pos: "adj.", meaning: "不感兴趣的", base: "interested", baseMeaning: "感兴趣的", ipa: "/ʌnˈɪntrəstɪd/", baseIpa: "/ˈɪntrəstɪd/", example: "Girls are generally uninterested in these types of movies." },
-      { prefix: "un-", word: "unhappy", pos: "adj.", meaning: "不开心的", base: "happy", baseMeaning: "开心的", ipa: "/ʌnˈhæpi/", baseIpa: "/ˈhæpi/" },
-      { prefix: "un-", word: "unstable", pos: "adj.", meaning: "不稳定的", base: "stable", baseMeaning: "稳定的", ipa: "/ʌnˈsteɪbl/", baseIpa: "/ˈsteɪbl/" },
-      { prefix: "un-", word: "uncomfortable", pos: "adj.", meaning: "不舒服的", base: "comfortable", baseMeaning: "舒服的", ipa: "/ʌnˈkʌmftəbl/", baseIpa: "/ˈkʌmftəbl/" },
-      { prefix: "un-", word: "unfair", pos: "adj.", meaning: "不公平的", base: "fair", baseMeaning: "公平的", ipa: "/ˌʌnˈfeə/", baseIpa: "/feə/" },
-      { prefix: "un-", word: "unlucky", pos: "adj.", meaning: "不幸的", base: "lucky", baseMeaning: "幸运的", ipa: "/ʌnˈlʌki/", baseIpa: "/ˈlʌki/" },
-      { prefix: "un-", word: "unable", pos: "adj.", meaning: "无能力的", base: "able", baseMeaning: "有能力的", ipa: "/ʌnˈeɪbl/", baseIpa: "/ˈeɪbl/" },
-      { prefix: "un-", word: "uneasy", pos: "adj.", meaning: "不安的", base: "easy", baseMeaning: "安逸的", ipa: "/ʌnˈiːzi/", baseIpa: "/ˈiːzi/" },
-      { prefix: "un-", word: "unnecessary", pos: "adj.", meaning: "不必要的", base: "necessary", baseMeaning: "必要的", ipa: "/ʌnˈnesəsəri/", baseIpa: "/ˈnesəsəri/" },
-      { prefix: "un-", word: "unhealthy", pos: "adj.", meaning: "不健康的", base: "healthy", baseMeaning: "健康的", ipa: "/ʌnˈhelθi/", baseIpa: "/ˈhelθi/" },
-      { prefix: "un-", word: "unknown", pos: "adj.", meaning: "未知的", base: "known", baseMeaning: "已知的", ipa: "/ˌʌnˈnəʊn/", baseIpa: "/nəʊn/" },
-      { prefix: "un-", word: "unforgettable", pos: "adj.", meaning: "难忘的", base: "forgettable", baseMeaning: "易忘的", ipa: "/ˌʌnfəˈɡetəbl/", baseIpa: "/fəˈɡetəbl/" },
-      { prefix: "un-", word: "uncertain", pos: "adj.", meaning: "不确定的", base: "certain", baseMeaning: "确定的", ipa: "/ʌnˈsɜːtn/", baseIpa: "/ˈsɜːtn/" },
-      { prefix: "un-", word: "unpaid", pos: "adj.", meaning: "未付款的", base: "paid", baseMeaning: "已付款的", ipa: "/ˌʌnˈpeɪd/", baseIpa: "/peɪd/" },
-      { prefix: "un-", word: "unimportant", pos: "adj.", meaning: "不重要的", base: "important", baseMeaning: "重要的", ipa: "/ˌʌnɪmˈpɔːtnt/", baseIpa: "/ɪmˈpɔːtnt/" },
-      { prefix: "un-", word: "unclear", pos: "adj.", meaning: "不清楚的", base: "clear", baseMeaning: "清楚的", ipa: "/ˌʌnˈklɪə/", baseIpa: "/klɪə/" },
-      { prefix: "un-", word: "unlikely", pos: "adj.", meaning: "不太可能的", base: "likely", baseMeaning: "可能的", ipa: "/ʌnˈlaɪkli/", baseIpa: "/ˈlaɪkli/" },
-      { prefix: "un-", word: "unavoidable", pos: "adj.", meaning: "不可避免的", base: "avoidable", baseMeaning: "可避免的", ipa: "/ˌʌnəˈvɔɪdəbl/", baseIpa: "/əˈvɔɪdəbl/" },
-      { prefix: "un-", word: "unkind", pos: "adj.", meaning: "不友善的", base: "kind", baseMeaning: "友善的", ipa: "/ʌnˈkaɪnd/", baseIpa: "/kaɪnd/" },
-      { prefix: "un-", word: "unlimited", pos: "adj.", meaning: "无限制的", base: "limited", baseMeaning: "有限制的", ipa: "/ʌnˈlɪmɪtɪd/", baseIpa: "/ˈlɪmɪtɪd/" },
-      { prefix: "un-", word: "unacceptable", pos: "adj.", meaning: "不可接受的", base: "acceptable", baseMeaning: "可接受的", ipa: "/ˌʌnəkˈseptəbl/", baseIpa: "/əkˈseptəbl/" },
-      { prefix: "un-", word: "untidy", pos: "adj.", meaning: "不整洁的", base: "tidy", baseMeaning: "整洁的", ipa: "/ʌnˈtaɪdi/", baseIpa: "/ˈtaɪdi/" },
-      { prefix: "un-", word: "unfriendly", pos: "adj.", meaning: "不友好的", base: "friendly", baseMeaning: "友好的", ipa: "/ʌnˈfrendli/", baseIpa: "/ˈfrendli/" },
-      { prefix: "un-", word: "unaffordable", pos: "adj.", meaning: "负担不起的", base: "affordable", baseMeaning: "负担得起的", ipa: "/ˌʌnəˈfɔːdəbl/", baseIpa: "/əˈfɔːdəbl/" },
-      { prefix: "un-", word: "uncrowded", pos: "adj.", meaning: "不挤的", base: "crowded", baseMeaning: "拥挤的", ipa: "/ʌnˈkraʊdɪd/", baseIpa: "/ˈkraʊdɪd/" },
-      { prefix: "un-", word: "unemployed", pos: "adj.", meaning: "失业的", base: "employed", baseMeaning: "就业的", ipa: "/ˌʌnɪmˈplɔɪd/", baseIpa: "/ɪmˈplɔɪd/" },
-      { prefix: "un-", word: "unfortunate", pos: "adj.", meaning: "不幸的", base: "fortunate", baseMeaning: "幸运的", ipa: "/ʌnˈfɔːtʃənət/", baseIpa: "/ˈfɔːtʃənət/" },
-      { prefix: "un-", word: "unsafe", pos: "adj.", meaning: "不安全的", base: "safe", baseMeaning: "安全的", ipa: "/ʌnˈseɪf/", baseIpa: "/seɪf/" },
-      { prefix: "un-", word: "unfamiliar", pos: "adj.", meaning: "不熟悉的", base: "familiar", baseMeaning: "熟悉的", ipa: "/ˌʌnfəˈmɪliə/", baseIpa: "/fəˈmɪliə/" },
-      { prefix: "un-", word: "unconscious", pos: "adj.", meaning: "无意识的", base: "conscious", baseMeaning: "有意识的", ipa: "/ʌnˈkɒnʃəs/", baseIpa: "/ˈkɒnʃəs/" },
-      { prefix: "un-", word: "unemployment", pos: "n.", meaning: "失业", base: "employment", baseMeaning: "就业", ipa: "/ˌʌnɪmˈplɔɪmənt/", baseIpa: "/ɪmˈplɔɪmənt/", example: "Unemployment is likely to go on rising this year." },
-      { prefix: "un-", word: "unawareness", pos: "n.", meaning: "不知道", base: "awareness", baseMeaning: "认识", ipa: "/ˌʌnəˈweənəs/", baseIpa: "/əˈweənəs/" },
-      { prefix: "un-", word: "uncertainty", pos: "n.", meaning: "犹豫 / 不确定", base: "certainty", baseMeaning: "确实", ipa: "/ʌnˈsɜːtnti/", baseIpa: "/ˈsɜːtnti/" },
-      { prefix: "un-", word: "unlock", pos: "v.", meaning: "开锁", base: "lock", baseMeaning: "锁住", ipa: "/ʌnˈlɒk/", baseIpa: "/lɒk/", example: "The divers hoped to unlock some of the secrets of the seabed." },
-      { prefix: "un-", word: "unload", pos: "v.", meaning: "卸载", base: "load", baseMeaning: "装载", ipa: "/ʌnˈləʊd/", baseIpa: "/ləʊd/" },
-      { prefix: "un-", word: "unfold", pos: "v.", meaning: "展开", base: "fold", baseMeaning: "折叠", ipa: "/ʌnˈfəʊld/", baseIpa: "/fəʊld/" },
-      { prefix: "un-", word: "untie", pos: "v.", meaning: "打开结", base: "tie", baseMeaning: "打结", ipa: "/ʌnˈtaɪ/", baseIpa: "/taɪ/" },
-      { prefix: "dis-", word: "dishonest", pos: "adj.", meaning: "不诚实的", base: "honest", baseMeaning: "诚实的", ipa: "/dɪsˈɒnɪst/", baseIpa: "/ˈɒnɪst/", example: "Elderly people are easily cheated by dishonest salesmen." },
-      { prefix: "dis-", word: "disinterested", pos: "adj.", meaning: "公正的", base: "interested", baseMeaning: "感兴趣的", ipa: "/dɪsˈɪntrəstɪd/", baseIpa: "/ˈɪntrəstɪd/", note: "注意：disinterested ≈ impartial，不是 uninterested" },
-      { prefix: "dis-", word: "disabled", pos: "adj.", meaning: "残疾的", base: "able", baseMeaning: "能够的", ipa: "/dɪsˈeɪbld/", baseIpa: "/ˈeɪbl/" },
-      { prefix: "dis-", word: "disloyal", pos: "adj.", meaning: "不忠的", base: "loyal", baseMeaning: "忠诚的", ipa: "/dɪsˈlɔɪəl/", baseIpa: "/ˈlɔɪəl/" },
-      { prefix: "dis-", word: "disbelief", pos: "n.", meaning: "不信", base: "belief", baseMeaning: "相信", ipa: "/ˌdɪsbɪˈliːf/", baseIpa: "/bɪˈliːf/", example: "He read the news in disbelief over and over again." },
-      { prefix: "dis-", word: "disability", pos: "n.", meaning: "残疾", base: "ability", baseMeaning: "能力", ipa: "/ˌdɪsəˈbɪləti/", baseIpa: "/əˈbɪləti/" },
-      { prefix: "dis-", word: "disadvantage", pos: "n.", meaning: "缺点", base: "advantage", baseMeaning: "优点", ipa: "/ˌdɪsədˈvɑːntɪdʒ/", baseIpa: "/ədˈvɑːntɪdʒ/" },
-      { prefix: "dis-", word: "disorder", pos: "n.", meaning: "混乱", base: "order", baseMeaning: "顺序", ipa: "/dɪsˈɔːdə/", baseIpa: "/ˈɔːdə/" },
-      { prefix: "dis-", word: "disapproval", pos: "n.", meaning: "反对", base: "approval", baseMeaning: "赞成", ipa: "/ˌdɪsəˈpruːvl/", baseIpa: "/əˈpruːvl/" },
-      { prefix: "dis-", word: "disagreement", pos: "n.", meaning: "分歧", base: "agreement", baseMeaning: "同意", ipa: "/ˌdɪsəˈɡriːmənt/", baseIpa: "/əˈɡriːmənt/" },
-      { prefix: "dis-", word: "disappear", pos: "v.", meaning: "消失", base: "appear", baseMeaning: "出现", ipa: "/ˌdɪsəˈpɪə/", baseIpa: "/əˈpɪə/", example: "The sun slowly disappeared behind the horizon." },
-      { prefix: "dis-", word: "disagree", pos: "v.", meaning: "不同意", base: "agree", baseMeaning: "同意", ipa: "/ˌdɪsəˈɡriː/", baseIpa: "/əˈɡriː/" },
-      { prefix: "dis-", word: "disapprove", pos: "v.", meaning: "反对", base: "approve", baseMeaning: "赞成", ipa: "/ˌdɪsəˈpruːv/", baseIpa: "/əˈpruːv/" },
-      { prefix: "dis-", word: "disbelieve", pos: "v.", meaning: "不信", base: "believe", baseMeaning: "相信", ipa: "/ˌdɪsbɪˈliːv/", baseIpa: "/bɪˈliːv/" },
-      { prefix: "dis-", word: "dislike", pos: "v.", meaning: "不喜欢", base: "like", baseMeaning: "喜欢", ipa: "/dɪsˈlaɪk/", baseIpa: "/laɪk/" },
-      { prefix: "dis-", word: "discover", pos: "v.", meaning: "发现", base: "cover", baseMeaning: "覆盖", ipa: "/dɪˈskʌvə/", baseIpa: "/ˈkʌvə/" },
-      { prefix: "dis-", word: "disarm", pos: "v.", meaning: "解除武装", base: "arm", baseMeaning: "武装", ipa: "/dɪsˈɑːm/", baseIpa: "/ɑːm/" },
-      { prefix: "dis-", word: "disconnect", pos: "v.", meaning: "切断", base: "connect", baseMeaning: "连接", ipa: "/ˌdɪskəˈnekt/", baseIpa: "/kəˈnekt/" },
-      { prefix: "dis-", word: "disprove", pos: "v.", meaning: "反驳", base: "prove", baseMeaning: "证明", ipa: "/ˌdɪsˈpruːv/", baseIpa: "/pruːv/" },
-      { prefix: "dis-", word: "disengage", pos: "v.", meaning: "脱离", base: "engage", baseMeaning: "参与", ipa: "/ˌdɪsɪnˈɡeɪdʒ/", baseIpa: "/ɪnˈɡeɪdʒ/" },
-      { prefix: "dis-", word: "disclaim", pos: "v.", meaning: "否认", base: "claim", baseMeaning: "声称", ipa: "/dɪsˈkleɪm/", baseIpa: "/kleɪm/" },
-      { prefix: "de-", word: "deforest", pos: "v.", meaning: "砍掉森林", base: "forest", baseMeaning: "森林", ipa: "/ˌdiːˈfɒrɪst/", baseIpa: "/ˈfɒrɪst/", example: "Two thirds of the region has been deforested in the past decade." },
-      { prefix: "de-", word: "decode", pos: "v.", meaning: "破除密码", base: "code", baseMeaning: "密码", ipa: "/ˌdiːˈkəʊd/", baseIpa: "/kəʊd/" },
-      { prefix: "de-", word: "devalue", pos: "v.", meaning: "使贬值", base: "value", baseMeaning: "价值", ipa: "/ˌdiːˈvæljuː/", baseIpa: "/ˈvæljuː/" },
-      { prefix: "de-", word: "deport", pos: "v.", meaning: "驱逐出境", base: "port", baseMeaning: "港口", ipa: "/dɪˈpɔːt/", baseIpa: "/pɔːt/" },
-      { prefix: "de-", word: "defame", pos: "v.", meaning: "诽谤", base: "fame", baseMeaning: "名声", ipa: "/dɪˈfeɪm/", baseIpa: "/feɪm/" },
-      { prefix: "de-", word: "deactivate", pos: "v.", meaning: "使无效", base: "activate", baseMeaning: "激活", ipa: "/ˌdiːˈæktɪveɪt/", baseIpa: "/ˈæktɪveɪt/" },
-      { prefix: "mis-", word: "misunderstand", pos: "v.", meaning: "误解", base: "understand", baseMeaning: "理解", ipa: "/ˌmɪsʌndəˈstænd/", baseIpa: "/ˌʌndəˈstænd/", example: "Some of you may misunderstand what I'm asking." },
-      { prefix: "mis-", word: "misuse", pos: "v.", meaning: "误用", base: "use", baseMeaning: "使用", ipa: "/ˌmɪsˈjuːz/", baseIpa: "/juːz/" },
-      { prefix: "mis-", word: "mismatch", pos: "v.", meaning: "误配", base: "match", baseMeaning: "匹配", ipa: "/ˈmɪsmætʃ/", baseIpa: "/mætʃ/" },
-      { prefix: "mis-", word: "misspell", pos: "v.", meaning: "拼错", base: "spell", baseMeaning: "拼写", ipa: "/ˌmɪsˈspel/", baseIpa: "/spel/" },
-      { prefix: "mis-", word: "mislead", pos: "v.", meaning: "误导", base: "lead", baseMeaning: "引导", ipa: "/ˌmɪsˈliːd/", baseIpa: "/liːd/" },
-      { prefix: "mis-", word: "misjudge", pos: "v.", meaning: "误判", base: "judge", baseMeaning: "判断", ipa: "/ˌmɪsˈdʒʌdʒ/", baseIpa: "/dʒʌdʒ/" },
+      { prefix: "in-", word: "inexpensive", pos: "adj.", meaning: "便宜的；不贵的；廉价的", base: "expensive", baseMeaning: "昂贵的；价格高的", ipa: "/ˌɪnɪkˈspensɪv/", baseIpa: "/ɪkˈspensɪv/", example: "Check out the various inexpensive ways to tour the city." },
+      { prefix: "in-", word: "incorrect", pos: "adj.", meaning: "不正确的；错误的", base: "correct", baseMeaning: "正确的；无误的", ipa: "/ˌɪnkəˈrekt/", baseIpa: "/kəˈrekt/" },
+      { prefix: "in-", word: "indirect", pos: "adj.", meaning: "间接的；迂回的", base: "direct", baseMeaning: "直接的；直截了当的", ipa: "/ˌɪndəˈrekt/", baseIpa: "/dəˈrekt/" },
+      { prefix: "in-", word: "inactive", pos: "adj.", meaning: "不活跃的；不活动的；闲置的", base: "active", baseMeaning: "活跃的；积极的；主动的", ipa: "/ɪnˈæktɪv/", baseIpa: "/ˈæktɪv/" },
+      { prefix: "in-", word: "inaccurate", pos: "adj.", meaning: "不准确的；有误差的", base: "accurate", baseMeaning: "准确的；精确的", ipa: "/ɪnˈækjərət/", baseIpa: "/ˈækjərət/" },
+      { prefix: "in-", word: "independent", pos: "adj.", meaning: "独立的；自主的；自立的", base: "dependent", baseMeaning: "依靠的；依赖的", ipa: "/ˌɪndɪˈpendənt/", baseIpa: "/dɪˈpendənt/" },
+      { prefix: "in-", word: "inconvenient", pos: "adj.", meaning: "不便的；不方便的；麻烦的", base: "convenient", baseMeaning: "方便的；便利的", ipa: "/ˌɪnkənˈviːniənt/", baseIpa: "/kənˈviːniənt/" },
+      { prefix: "in-", word: "inappropriate", pos: "adj.", meaning: "不合适的；不恰当的；不得体的", base: "appropriate", baseMeaning: "合适的；恰当的；适宜的", ipa: "/ˌɪnəˈprəʊpriət/", baseIpa: "/əˈprəʊpriət/" },
+      { prefix: "in-", word: "invisible", pos: "adj.", meaning: "看不见的；隐形的；无形的", base: "visible", baseMeaning: "可见的；看得见的；明显的", ipa: "/ɪnˈvɪzəbl/", baseIpa: "/ˈvɪzəbl/" },
+      { prefix: "in-", word: "inefficient", pos: "adj.", meaning: "效率低的；低效的", base: "efficient", baseMeaning: "高效的；有效率的", ipa: "/ˌɪnɪˈfɪʃnt/", baseIpa: "/ɪˈfɪʃnt/" },
+      { prefix: "in-", word: "incomplete", pos: "adj.", meaning: "不完全的；不完整的；未完成的", base: "complete", baseMeaning: "完全的；完整的；完成的", ipa: "/ˌɪnkəmˈpliːt/", baseIpa: "/kəmˈpliːt/" },
+      { prefix: "in-", word: "inconvenience", pos: "n.", meaning: "不便；麻烦；打扰", base: "convenience", baseMeaning: "方便；便利；便利设施", ipa: "/ˌɪnkənˈviːniəns/", baseIpa: "/kənˈviːniəns/", example: "The inconvenience caused by the machine was acceptable." },
+      { prefix: "in-", word: "inaccuracy", pos: "n.", meaning: "不精确；误差；不准确", base: "accuracy", baseMeaning: "准确性；精确度", ipa: "/ɪnˈækjərəsi/", baseIpa: "/ˈækjərəsi/" },
+      { prefix: "in-", word: "independence", pos: "n.", meaning: "独立；自主；独立日", base: "dependence", baseMeaning: "依靠；依赖", ipa: "/ˌɪndɪˈpendəns/", baseIpa: "/dɪˈpendəns/" },
+      { prefix: "in-", word: "inability", pos: "n.", meaning: "无能；无法；不能", base: "ability", baseMeaning: "能力；才能", ipa: "/ˌɪnəˈbɪləti/", baseIpa: "/əˈbɪləti/" },
+      { prefix: "in-", word: "incompetence", pos: "n.", meaning: "无能；不称职；不胜任", base: "competence", baseMeaning: "能力；胜任；资格", ipa: "/ɪnˈkɒmpɪtəns/", baseIpa: "/ˈkɒmpɪtəns/" },
+      { prefix: "in-", word: "injustice", pos: "n.", meaning: "不公平；不公正；冤屈", base: "justice", baseMeaning: "公平；正义；司法", ipa: "/ɪnˈdʒʌstɪs/", baseIpa: "/ˈdʒʌstɪs/" },
+      { prefix: "im-", word: "impossible", pos: "adj.", meaning: "不可能的；办不到的", base: "possible", baseMeaning: "可能的；可行的", ipa: "/ɪmˈpɒsəbl/", baseIpa: "/ˈpɒsəbl/", example: "She found it impossible to finish all these tasks." },
+      { prefix: "im-", word: "impolite", pos: "adj.", meaning: "不礼貌的；失礼的；粗鲁的", base: "polite", baseMeaning: "礼貌的；客气的", ipa: "/ˌɪmpəˈlaɪt/", baseIpa: "/pəˈlaɪt/" },
+      { prefix: "im-", word: "impatient", pos: "adj.", meaning: "不耐心的；急躁的；不耐烦的", base: "patient", baseMeaning: "耐心的；有耐性的", ipa: "/ɪmˈpeɪʃnt/", baseIpa: "/ˈpeɪʃnt/" },
+      { prefix: "im-", word: "imperfect", pos: "adj.", meaning: "不完美的；有缺陷的", base: "perfect", baseMeaning: "完美的；完善的；十足的", ipa: "/ɪmˈpɜːfɪkt/", baseIpa: "/ˈpɜːfɪkt/" },
+      { prefix: "im-", word: "improper", pos: "adj.", meaning: "不合适的；不正当的；不得体的", base: "proper", baseMeaning: "合适的；正当的；适当的", ipa: "/ɪmˈprɒpə/", baseIpa: "/ˈprɒpə/" },
+      { prefix: "im-", word: "impractical", pos: "adj.", meaning: "不切实际的；不实用的", base: "practical", baseMeaning: "实际的；实用的；可行的", ipa: "/ɪmˈpræktɪkl/", baseIpa: "/ˈpræktɪkl/" },
+      { prefix: "im-", word: "immeasurable", pos: "adj.", meaning: "不可测量的；无法估量的；极大的", base: "measurable", baseMeaning: "可测量的；可衡量的", ipa: "/ɪˈmeʒərəbl/", baseIpa: "/ˈmeʒərəbl/" },
+      { prefix: "im-", word: "immoral", pos: "adj.", meaning: "不道德的；邪恶的", base: "moral", baseMeaning: "道德的；有道德的", ipa: "/ɪˈmɒrəl/", baseIpa: "/ˈmɒrəl/" },
+      { prefix: "im-", word: "immature", pos: "adj.", meaning: "不成熟的；幼稚的", base: "mature", baseMeaning: "成熟的；成年的", ipa: "/ˌɪməˈtʃʊə/", baseIpa: "/məˈtʃʊə/" },
+      { prefix: "im-", word: "immovable", pos: "adj.", meaning: "固定的；不可移动的；坚定的", base: "movable", baseMeaning: "可移动的；活动的", ipa: "/ɪˈmuːvəbl/", baseIpa: "/ˈmuːvəbl/" },
+      { prefix: "im-", word: "immobile", pos: "adj.", meaning: "静止的；不能移动的", base: "mobile", baseMeaning: "可移动的；流动的；手机的", ipa: "/ɪˈməʊbaɪl/", baseIpa: "/ˈməʊbaɪl/" },
+      { prefix: "ir-", word: "irregular", pos: "adj.", meaning: "不规律的；不规则的；不定期的", base: "regular", baseMeaning: "规律的；定期的；常规的", ipa: "/ɪˈreɡjələ/", baseIpa: "/ˈreɡjələ/", example: "The schedule for the project meetings is irregular." },
+      { prefix: "ir-", word: "irresponsible", pos: "adj.", meaning: "不负责的；不负责任的", base: "responsible", baseMeaning: "负责的；有责任的；可靠的", ipa: "/ˌɪrɪˈspɒnsəbl/", baseIpa: "/rɪˈspɒnsəbl/" },
+      { prefix: "ir-", word: "irreplaceable", pos: "adj.", meaning: "不可替代的；独一无二的", base: "replaceable", baseMeaning: "可替代的；可更换的", ipa: "/ˌɪrɪˈpleɪsəbl/", baseIpa: "/rɪˈpleɪsəbl/" },
+      { prefix: "ir-", word: "irresistible", pos: "adj.", meaning: "无法抗拒的；极诱人的", base: "resistible", baseMeaning: "可抵抗的；可抗拒的", ipa: "/ˌɪrɪˈzɪstəbl/", baseIpa: "/rɪˈzɪstəbl/" },
+      { prefix: "ir-", word: "irrelevant", pos: "adj.", meaning: "不相关的；无关紧要的", base: "relevant", baseMeaning: "相关的；切题的", ipa: "/ɪˈreləvənt/", baseIpa: "/ˈreləvənt/" },
+      { prefix: "il-", word: "illegal", pos: "adj.", meaning: "违法的；非法的", base: "legal", baseMeaning: "合法的；法律的", ipa: "/ɪˈliːɡl/", baseIpa: "/ˈliːɡl/", example: "This would make it illegal to import these types of snakes." },
+      { prefix: "il-", word: "illogical", pos: "adj.", meaning: "无逻辑的；不合理的", base: "logical", baseMeaning: "有逻辑的；合理的", ipa: "/ɪˈlɒdʒɪkl/", baseIpa: "/ˈlɒdʒɪkl/" },
+      { prefix: "un-", word: "uninterested", pos: "adj.", meaning: "不感兴趣的；漠不关心的", base: "interested", baseMeaning: "感兴趣的；有兴趣的", ipa: "/ʌnˈɪntrəstɪd/", baseIpa: "/ˈɪntrəstɪd/", example: "Girls are generally uninterested in these types of movies." },
+      { prefix: "un-", word: "unhappy", pos: "adj.", meaning: "不开心的；不快乐的；忧愁的", base: "happy", baseMeaning: "开心的；快乐的；幸福的", ipa: "/ʌnˈhæpi/", baseIpa: "/ˈhæpi/" },
+      { prefix: "un-", word: "unstable", pos: "adj.", meaning: "不稳定的；易变的", base: "stable", baseMeaning: "稳定的；稳固的", ipa: "/ʌnˈsteɪbl/", baseIpa: "/ˈsteɪbl/" },
+      { prefix: "un-", word: "uncomfortable", pos: "adj.", meaning: "不舒服的；不舒适的；尴尬的", base: "comfortable", baseMeaning: "舒服的；舒适的；安逸的", ipa: "/ʌnˈkʌmftəbl/", baseIpa: "/ˈkʌmftəbl/" },
+      { prefix: "un-", word: "unfair", pos: "adj.", meaning: "不公平的；不公正的", base: "fair", baseMeaning: "公平的；公正的；合理的", ipa: "/ˌʌnˈfeə/", baseIpa: "/feə/" },
+      { prefix: "un-", word: "unlucky", pos: "adj.", meaning: "不幸的；倒霉的", base: "lucky", baseMeaning: "幸运的；运气好的", ipa: "/ʌnˈlʌki/", baseIpa: "/ˈlʌki/" },
+      { prefix: "un-", word: "unable", pos: "adj.", meaning: "无能力的；不能的；无法的", base: "able", baseMeaning: "有能力的；能够的", ipa: "/ʌnˈeɪbl/", baseIpa: "/ˈeɪbl/" },
+      { prefix: "un-", word: "uneasy", pos: "adj.", meaning: "不安的；忧虑的；不自在的", base: "easy", baseMeaning: "安逸的；容易的；轻松的", ipa: "/ʌnˈiːzi/", baseIpa: "/ˈiːzi/" },
+      { prefix: "un-", word: "unnecessary", pos: "adj.", meaning: "不必要的；多余的", base: "necessary", baseMeaning: "必要的；必需的", ipa: "/ʌnˈnesəsəri/", baseIpa: "/ˈnesəsəri/" },
+      { prefix: "un-", word: "unhealthy", pos: "adj.", meaning: "不健康的；有害健康的", base: "healthy", baseMeaning: "健康的；有益健康的", ipa: "/ʌnˈhelθi/", baseIpa: "/ˈhelθi/" },
+      { prefix: "un-", word: "unknown", pos: "adj.", meaning: "未知的；不出名的；不详的", base: "known", baseMeaning: "已知的；出名的；众所周知的", ipa: "/ˌʌnˈnəʊn/", baseIpa: "/nəʊn/" },
+      { prefix: "un-", word: "unforgettable", pos: "adj.", meaning: "难忘的；无法忘记的", base: "forgettable", baseMeaning: "易忘的；不起眼的", ipa: "/ˌʌnfəˈɡetəbl/", baseIpa: "/fəˈɡetəbl/" },
+      { prefix: "un-", word: "uncertain", pos: "adj.", meaning: "不确定的；无把握的", base: "certain", baseMeaning: "确定的；肯定的；必然的", ipa: "/ʌnˈsɜːtn/", baseIpa: "/ˈsɜːtn/" },
+      { prefix: "un-", word: "unpaid", pos: "adj.", meaning: "未付款的；无报酬的", base: "paid", baseMeaning: "已付款的；有报酬的", ipa: "/ˌʌnˈpeɪd/", baseIpa: "/peɪd/" },
+      { prefix: "un-", word: "unimportant", pos: "adj.", meaning: "不重要的；无关紧要的", base: "important", baseMeaning: "重要的；重大的", ipa: "/ˌʌnɪmˈpɔːtnt/", baseIpa: "/ɪmˈpɔːtnt/" },
+      { prefix: "un-", word: "unclear", pos: "adj.", meaning: "不清楚的；含糊的", base: "clear", baseMeaning: "清楚的；清晰的；明白的", ipa: "/ˌʌnˈklɪə/", baseIpa: "/klɪə/" },
+      { prefix: "un-", word: "unlikely", pos: "adj.", meaning: "不太可能的；未必的", base: "likely", baseMeaning: "可能的；很可能的", ipa: "/ʌnˈlaɪkli/", baseIpa: "/ˈlaɪkli/" },
+      { prefix: "un-", word: "unavoidable", pos: "adj.", meaning: "不可避免的；必然的", base: "avoidable", baseMeaning: "可避免的", ipa: "/ˌʌnəˈvɔɪdəbl/", baseIpa: "/əˈvɔɪdəbl/" },
+      { prefix: "un-", word: "unkind", pos: "adj.", meaning: "不友善的；刻薄的", base: "kind", baseMeaning: "友善的；好心的；和蔼的", ipa: "/ʌnˈkaɪnd/", baseIpa: "/kaɪnd/" },
+      { prefix: "un-", word: "unlimited", pos: "adj.", meaning: "无限制的；无限的", base: "limited", baseMeaning: "有限制的；有限的", ipa: "/ʌnˈlɪmɪtɪd/", baseIpa: "/ˈlɪmɪtɪd/" },
+      { prefix: "un-", word: "unacceptable", pos: "adj.", meaning: "不可接受的；难以容忍的", base: "acceptable", baseMeaning: "可接受的；令人满意的", ipa: "/ˌʌnəkˈseptəbl/", baseIpa: "/əkˈseptəbl/" },
+      { prefix: "un-", word: "untidy", pos: "adj.", meaning: "不整洁的；凌乱的", base: "tidy", baseMeaning: "整洁的；整齐的", ipa: "/ʌnˈtaɪdi/", baseIpa: "/ˈtaɪdi/" },
+      { prefix: "un-", word: "unfriendly", pos: "adj.", meaning: "不友好的；冷淡的", base: "friendly", baseMeaning: "友好的；友善的", ipa: "/ʌnˈfrendli/", baseIpa: "/ˈfrendli/" },
+      { prefix: "un-", word: "unaffordable", pos: "adj.", meaning: "负担不起的；买不起的", base: "affordable", baseMeaning: "负担得起的；买得起的", ipa: "/ˌʌnəˈfɔːdəbl/", baseIpa: "/əˈfɔːdəbl/" },
+      { prefix: "un-", word: "uncrowded", pos: "adj.", meaning: "不挤的；人少的", base: "crowded", baseMeaning: "拥挤的；挤满人的", ipa: "/ʌnˈkraʊdɪd/", baseIpa: "/ˈkraʊdɪd/" },
+      { prefix: "un-", word: "unemployed", pos: "adj.", meaning: "失业的；待业的", base: "employed", baseMeaning: "就业的；受雇的", ipa: "/ˌʌnɪmˈplɔɪd/", baseIpa: "/ɪmˈplɔɪd/" },
+      { prefix: "un-", word: "unfortunate", pos: "adj.", meaning: "不幸的；令人遗憾的", base: "fortunate", baseMeaning: "幸运的；运气好的", ipa: "/ʌnˈfɔːtʃənət/", baseIpa: "/ˈfɔːtʃənət/" },
+      { prefix: "un-", word: "unsafe", pos: "adj.", meaning: "不安全的；危险的", base: "safe", baseMeaning: "安全的；无危险的", ipa: "/ʌnˈseɪf/", baseIpa: "/seɪf/" },
+      { prefix: "un-", word: "unfamiliar", pos: "adj.", meaning: "不熟悉的；陌生的", base: "familiar", baseMeaning: "熟悉的；常见的", ipa: "/ˌʌnfəˈmɪliə/", baseIpa: "/fəˈmɪliə/" },
+      { prefix: "un-", word: "unconscious", pos: "adj.", meaning: "无意识的；昏迷的；不省人事的", base: "conscious", baseMeaning: "有意识的；意识到的；清醒的", ipa: "/ʌnˈkɒnʃəs/", baseIpa: "/ˈkɒnʃəs/" },
+      { prefix: "un-", word: "unemployment", pos: "n.", meaning: "失业；失业率", base: "employment", baseMeaning: "就业；雇用；工作", ipa: "/ˌʌnɪmˈplɔɪmənt/", baseIpa: "/ɪmˈplɔɪmənt/", example: "Unemployment is likely to go on rising this year." },
+      { prefix: "un-", word: "unawareness", pos: "n.", meaning: "不知道；无意识；不觉察", base: "awareness", baseMeaning: "认识；意识；觉察", ipa: "/ˌʌnəˈweənəs/", baseIpa: "/əˈweənəs/" },
+      { prefix: "un-", word: "uncertainty", pos: "n.", meaning: "犹豫 / 不确定；不确定；犹豫；未知", base: "certainty", baseMeaning: "确实；确定性；必然", ipa: "/ʌnˈsɜːtnti/", baseIpa: "/ˈsɜːtnti/" },
+      { prefix: "un-", word: "unlock", pos: "v.", meaning: "开锁；解开；开启", base: "lock", baseMeaning: "锁住；锁上", ipa: "/ʌnˈlɒk/", baseIpa: "/lɒk/", example: "The divers hoped to unlock some of the secrets of the seabed." },
+      { prefix: "un-", word: "unload", pos: "v.", meaning: "卸载；卸货；卸下", base: "load", baseMeaning: "装载；加载；装货", ipa: "/ʌnˈləʊd/", baseIpa: "/ləʊd/" },
+      { prefix: "un-", word: "unfold", pos: "v.", meaning: "展开；打开；展现", base: "fold", baseMeaning: "折叠；对折", ipa: "/ʌnˈfəʊld/", baseIpa: "/fəʊld/" },
+      { prefix: "un-", word: "untie", pos: "v.", meaning: "打开结；解开；松开", base: "tie", baseMeaning: "打结；系上；绑", ipa: "/ʌnˈtaɪ/", baseIpa: "/taɪ/" },
+      { prefix: "dis-", word: "dishonest", pos: "adj.", meaning: "不诚实的；欺诈的", base: "honest", baseMeaning: "诚实的；正直的", ipa: "/dɪsˈɒnɪst/", baseIpa: "/ˈɒnɪst/", example: "Elderly people are easily cheated by dishonest salesmen." },
+      { prefix: "dis-", word: "disinterested", pos: "adj.", meaning: "公正的；无私的；不偏不倚的", base: "interested", baseMeaning: "感兴趣的；有兴趣的", ipa: "/dɪsˈɪntrəstɪd/", baseIpa: "/ˈɪntrəstɪd/", note: "注意：disinterested ≈ impartial，不是 uninterested" },
+      { prefix: "dis-", word: "disabled", pos: "adj.", meaning: "残疾的；有障碍的", base: "able", baseMeaning: "能够的；有能力的", ipa: "/dɪsˈeɪbld/", baseIpa: "/ˈeɪbl/" },
+      { prefix: "dis-", word: "disloyal", pos: "adj.", meaning: "不忠的；背叛的", base: "loyal", baseMeaning: "忠诚的；忠心的", ipa: "/dɪsˈlɔɪəl/", baseIpa: "/ˈlɔɪəl/" },
+      { prefix: "dis-", word: "disbelief", pos: "n.", meaning: "不信；怀疑；难以置信", base: "belief", baseMeaning: "相信；信念；信仰", ipa: "/ˌdɪsbɪˈliːf/", baseIpa: "/bɪˈliːf/", example: "He read the news in disbelief over and over again." },
+      { prefix: "dis-", word: "disability", pos: "n.", meaning: "残疾；障碍；无能", base: "ability", baseMeaning: "能力；才能", ipa: "/ˌdɪsəˈbɪləti/", baseIpa: "/əˈbɪləti/" },
+      { prefix: "dis-", word: "disadvantage", pos: "n.", meaning: "缺点；不利；劣势", base: "advantage", baseMeaning: "优点；优势；好处", ipa: "/ˌdɪsədˈvɑːntɪdʒ/", baseIpa: "/ədˈvɑːntɪdʒ/" },
+      { prefix: "dis-", word: "disorder", pos: "n.", meaning: "混乱；失调；紊乱", base: "order", baseMeaning: "顺序；秩序；命令", ipa: "/dɪsˈɔːdə/", baseIpa: "/ˈɔːdə/" },
+      { prefix: "dis-", word: "disapproval", pos: "n.", meaning: "反对；不赞成；非难", base: "approval", baseMeaning: "赞成；批准；认可", ipa: "/ˌdɪsəˈpruːvl/", baseIpa: "/əˈpruːvl/" },
+      { prefix: "dis-", word: "disagreement", pos: "n.", meaning: "分歧；不同意；争论", base: "agreement", baseMeaning: "同意；协议；一致", ipa: "/ˌdɪsəˈɡriːmənt/", baseIpa: "/əˈɡriːmənt/" },
+      { prefix: "dis-", word: "disappear", pos: "v.", meaning: "消失；不见；失踪", base: "appear", baseMeaning: "出现；显得；露面", ipa: "/ˌdɪsəˈpɪə/", baseIpa: "/əˈpɪə/", example: "The sun slowly disappeared behind the horizon." },
+      { prefix: "dis-", word: "disagree", pos: "v.", meaning: "不同意；有分歧", base: "agree", baseMeaning: "同意；赞成；达成一致", ipa: "/ˌdɪsəˈɡriː/", baseIpa: "/əˈɡriː/" },
+      { prefix: "dis-", word: "disapprove", pos: "v.", meaning: "反对；不赞成", base: "approve", baseMeaning: "赞成；批准；认可", ipa: "/ˌdɪsəˈpruːv/", baseIpa: "/əˈpruːv/" },
+      { prefix: "dis-", word: "disbelieve", pos: "v.", meaning: "不信；怀疑", base: "believe", baseMeaning: "相信；认为", ipa: "/ˌdɪsbɪˈliːv/", baseIpa: "/bɪˈliːv/" },
+      { prefix: "dis-", word: "dislike", pos: "v.", meaning: "不喜欢；厌恶", base: "like", baseMeaning: "喜欢；愿意", ipa: "/dɪsˈlaɪk/", baseIpa: "/laɪk/" },
+      { prefix: "dis-", word: "discover", pos: "v.", meaning: "发现；发觉", base: "cover", baseMeaning: "覆盖；遮盖；包括", ipa: "/dɪˈskʌvə/", baseIpa: "/ˈkʌvə/" },
+      { prefix: "dis-", word: "disarm", pos: "v.", meaning: "解除武装；缴械", base: "arm", baseMeaning: "武装；装备", ipa: "/dɪsˈɑːm/", baseIpa: "/ɑːm/" },
+      { prefix: "dis-", word: "disconnect", pos: "v.", meaning: "切断；断开；断开连接", base: "connect", baseMeaning: "连接；联系", ipa: "/ˌdɪskəˈnekt/", baseIpa: "/kəˈnekt/" },
+      { prefix: "dis-", word: "disprove", pos: "v.", meaning: "反驳；证明为假", base: "prove", baseMeaning: "证明；证实", ipa: "/ˌdɪsˈpruːv/", baseIpa: "/pruːv/" },
+      { prefix: "dis-", word: "disengage", pos: "v.", meaning: "脱离；松开；解脱", base: "engage", baseMeaning: "参与；从事；吸引", ipa: "/ˌdɪsɪnˈɡeɪdʒ/", baseIpa: "/ɪnˈɡeɪdʒ/" },
+      { prefix: "dis-", word: "disclaim", pos: "v.", meaning: "否认；放弃；免责声明", base: "claim", baseMeaning: "声称；主张；索赔", ipa: "/dɪsˈkleɪm/", baseIpa: "/kleɪm/" },
+      { prefix: "de-", word: "deforest", pos: "v.", meaning: "砍掉森林；毁林；伐林", base: "forest", baseMeaning: "森林；林地", ipa: "/ˌdiːˈfɒrɪst/", baseIpa: "/ˈfɒrɪst/", example: "Two thirds of the region has been deforested in the past decade." },
+      { prefix: "de-", word: "decode", pos: "v.", meaning: "破除密码；解码；破译", base: "code", baseMeaning: "密码；代码；编码", ipa: "/ˌdiːˈkəʊd/", baseIpa: "/kəʊd/" },
+      { prefix: "de-", word: "devalue", pos: "v.", meaning: "使贬值；降低价值", base: "value", baseMeaning: "价值；重视；数值", ipa: "/ˌdiːˈvæljuː/", baseIpa: "/ˈvæljuː/" },
+      { prefix: "de-", word: "deport", pos: "v.", meaning: "驱逐出境；放逐", base: "port", baseMeaning: "港口；端口", ipa: "/dɪˈpɔːt/", baseIpa: "/pɔːt/" },
+      { prefix: "de-", word: "defame", pos: "v.", meaning: "诽谤；中伤", base: "fame", baseMeaning: "名声；名望", ipa: "/dɪˈfeɪm/", baseIpa: "/feɪm/" },
+      { prefix: "de-", word: "deactivate", pos: "v.", meaning: "使无效；停用；关闭", base: "activate", baseMeaning: "激活；启动", ipa: "/ˌdiːˈæktɪveɪt/", baseIpa: "/ˈæktɪveɪt/" },
+      { prefix: "mis-", word: "misunderstand", pos: "v.", meaning: "误解；误会", base: "understand", baseMeaning: "理解；明白；懂", ipa: "/ˌmɪsʌndəˈstænd/", baseIpa: "/ˌʌndəˈstænd/", example: "Some of you may misunderstand what I'm asking." },
+      { prefix: "mis-", word: "misuse", pos: "v.", meaning: "误用；滥用", base: "use", baseMeaning: "使用；利用", ipa: "/ˌmɪsˈjuːz/", baseIpa: "/juːz/" },
+      { prefix: "mis-", word: "mismatch", pos: "v.", meaning: "误配；不匹配；错配", base: "match", baseMeaning: "匹配；相配；比赛", ipa: "/ˈmɪsmætʃ/", baseIpa: "/mætʃ/" },
+      { prefix: "mis-", word: "misspell", pos: "v.", meaning: "拼错；拼写错误", base: "spell", baseMeaning: "拼写；拼出", ipa: "/ˌmɪsˈspel/", baseIpa: "/spel/" },
+      { prefix: "mis-", word: "mislead", pos: "v.", meaning: "误导；欺骗", base: "lead", baseMeaning: "引导；带领；导致", ipa: "/ˌmɪsˈliːd/", baseIpa: "/liːd/" },
+      { prefix: "mis-", word: "misjudge", pos: "v.", meaning: "误判；判断错误", base: "judge", baseMeaning: "判断；审判；评判", ipa: "/ˌmɪsˈdʒʌdʒ/", baseIpa: "/dʒʌdʒ/" },
     ];
 
     const PREFIXES = ["all", "in-", "im-", "ir-", "il-", "un-", "dis-", "de-", "mis-"];
@@ -929,6 +1030,7 @@
       known: loadKnown(),
       flash: { queue: [], index: 0, flipped: false },
       quiz: { queue: [], index: 0, answered: false, choices: [], score: 0, picked: null },
+      spell: { queue: [], index: 0, answered: false, correct: false, input: "", score: 0, hint: false },
     };
 
     function loadKnown() {
@@ -1018,11 +1120,41 @@
       main.classList.toggle("hide-en", state.mode === "browse" && state.hideEn);
       if (state.mode === "browse") main.innerHTML = renderBrowse();
       else if (state.mode === "flash") main.innerHTML = renderFlash();
-      else main.innerHTML = renderQuiz();
+      else if (state.mode === "quiz") main.innerHTML = renderQuiz();
+      else main.innerHTML = renderSpell();
+
+      if (state.mode === "spell" && !state.spell.answered) {
+        const input = document.getElementById("spell-input");
+        if (input) {
+          input.value = state.spell.input || "";
+          requestAnimationFrame(() => input.focus());
+        }
+      }
     }
 
     function speakBtn(word) {
       return `<button type="button" class="speak-btn" data-speak="${word}" aria-label="朗读 ${word}">🔊</button>`;
+    }
+
+    function zhText(s) {
+      return String(s || "").replace(/；/g, " · ");
+    }
+
+    function flashPairHtml(w, withZh) {
+      return `
+        <div class="flash-pair">
+          <div>
+            <div class="fp-word">${w.base}</div>
+            <div class="fp-ipa">${w.baseIpa || ""}</div>
+            ${withZh ? `<div class="fp-zh">${zhText(w.baseMeaning)}</div>` : ""}
+          </div>
+          <div class="fp-arrow">→</div>
+          <div>
+            <div class="fp-word">${w.word}</div>
+            <div class="fp-ipa">${w.ipa || ""}</div>
+            ${withZh ? `<div class="fp-zh">${zhText(w.meaning)}</div>` : ""}
+          </div>
+        </div>`;
     }
 
     function renderBrowse() {
@@ -1052,14 +1184,14 @@
                     <div class="en">${w.base}</div>
                     <div class="meta-row">${speakBtn(w.base)} <span class="pos-badge">${w.pos}</span></div>
                     <div class="ipa">${w.baseIpa || ""}</div>
-                    <div class="zh">${w.baseMeaning}</div>
+                    <div class="zh">${zhText(w.baseMeaning)}</div>
                   </div>
                   <div class="arrow">→</div>
                   <div class="side">
                     <div class="en">${w.word}</div>
                     <div class="meta-row">${speakBtn(w.word)} <span class="pos-badge">${w.pos}</span></div>
                     <div class="ipa">${w.ipa || ""}</div>
-                    <div class="zh">${w.meaning}</div>
+                    <div class="zh">${zhText(w.meaning)}</div>
                   </div>
                 </div>
                 <div class="pair-actions">
@@ -1109,24 +1241,22 @@
           <div class="card ${state.flash.flipped ? "flipped" : ""}" id="flash-card" role="button" tabindex="0" aria-label="翻转卡片">
             <div class="card-inner">
               <div class="face front">
-                <div class="tag">${w.prefix} · ${w.pos}</div>
-                <div class="word">${w.word}</div>
-                <div class="flash-ipa">${w.ipa || ""}</div>
-                <div class="hint-tap">点卡片翻转</div>
+                <div class="tag">${w.prefix} · ${w.pos} · 两个单词</div>
+                ${flashPairHtml(w, false)}
+                <div class="hint-tap">点卡片看中文意思</div>
               </div>
               <div class="face back">
                 <div class="tag">${w.prefix} · ${w.pos}</div>
-                <div class="meaning">${w.meaning}</div>
-                <div class="flash-ipa">${w.ipa || ""}</div>
-                <div class="base-hint">${w.base} ${w.pos} ${w.baseIpa || ""}（${w.baseMeaning}）→ ${w.word} ${w.pos} ${w.ipa || ""}（${w.meaning}）</div>
+                ${flashPairHtml(w, true)}
                 ${w.note ? `<div class="example">${w.note}</div>` : ""}
                 ${w.example ? `<div class="example">“${w.example}”</div>` : ""}
               </div>
             </div>
           </div>
-          <div class="actions">
+          <div class="actions cols-4">
             <button type="button" class="btn bad" data-flash-again>再练</button>
-            <button type="button" class="btn ghost" data-speak="${w.word}">🔊 发音</button>
+            <button type="button" class="btn ghost" data-speak="${w.base}">🔊 原词</button>
+            <button type="button" class="btn ghost" data-speak="${w.word}">🔊 否定</button>
             <button type="button" class="btn ok" data-flash-know>认识</button>
           </div>
         </div>`;
@@ -1175,8 +1305,8 @@
           </div>
           <div class="quiz-prompt">
             <div class="tag" style="display:inline-block">${w.prefix} · ${w.pos}</div>
-            <div class="big">${w.meaning}</div>
-            <div class="pos">原词：${w.base} ${w.pos} ${w.baseIpa || ""}（${w.baseMeaning}）</div>
+            <div class="meanings-line">${zhText(w.meaning)}</div>
+            <div class="pos">原词：${w.base}（${zhText(w.baseMeaning)}）</div>
           </div>
           <div class="choices">
             ${state.quiz.choices.map((c) => {
@@ -1206,6 +1336,115 @@
               </div>`
             : ""}
         </div>`;
+    }
+
+    function ensureSpellQueue() {
+      if (!state.spell.queue.length) {
+        state.spell.queue = shuffle(filtered());
+        state.spell.index = 0;
+        state.spell.answered = false;
+        state.spell.correct = false;
+        state.spell.input = "";
+        state.spell.score = 0;
+        state.spell.hint = false;
+      }
+    }
+
+    function normSpell(s) {
+      return String(s || "").trim().toLowerCase().replace(/\s+/g, "");
+    }
+
+    function renderSpell() {
+      ensureSpellQueue();
+      const q = state.spell.queue;
+      if (!q.length) return `<div class="empty">没有可拼写的词。</div>`;
+
+      if (state.spell.index >= q.length) {
+        return `
+          <div class="done-box">
+            <h3>拼写结束</h3>
+            <p>正确 ${state.spell.score} / ${q.length}</p>
+            <button type="button" class="btn primary" data-spell-restart>再拼一轮</button>
+          </div>`;
+      }
+
+      const w = q[state.spell.index];
+      const pct = Math.round((state.spell.index / q.length) * 100);
+      const inputCls = !state.spell.answered
+        ? ""
+        : state.spell.correct
+        ? "ok"
+        : "bad";
+
+      return `
+        <div class="study-wrap">
+          <div class="progress-bar"><i style="width:${pct}%"></i></div>
+          <div class="meta-row">
+            <span>${state.spell.index + 1} / ${q.length}</span>
+            <span>得分 ${state.spell.score}</span>
+          </div>
+          <div class="quiz-prompt">
+            <div class="tag" style="display:inline-block">${w.prefix} · ${w.pos}</div>
+            <div class="meanings-line">${zhText(w.meaning)}</div>
+            ${state.spell.hint ? `<div class="flash-ipa">${w.ipa || ""}</div>` : ""}
+          </div>
+          <form class="spell-form" id="spell-form" autocomplete="off">
+            <input
+              id="spell-input"
+              class="spell-input ${inputCls}"
+              type="text"
+              enterkeyhint="done"
+              autocapitalize="off"
+              autocomplete="off"
+              autocorrect="off"
+              spellcheck="false"
+              placeholder="输入英文拼写"
+              ${state.spell.answered ? "readonly" : ""}
+              value=""
+            />
+            ${!state.spell.answered
+              ? `<div class="actions cols-3">
+                  <button type="button" class="btn ghost" data-spell-hint>提示</button>
+                  <button type="button" class="btn ghost" data-speak="${w.word}">🔊</button>
+                  <button type="button" class="btn primary" data-spell-check>检查</button>
+                </div>`
+              : ""}
+          </form>
+          <div class="feedback">
+            ${state.spell.answered
+              ? (state.spell.correct
+                  ? `正确 · ${w.ipa || ""}`
+                  : `正确答案是 <strong>${w.word}</strong> ${w.ipa || ""}`)
+              : "根据中文意思写出英文单词"}
+          </div>
+          ${state.spell.answered
+            ? `<div class="spell-answer">${w.word}</div>
+              <div class="actions" style="grid-template-columns:1fr 1fr">
+                <button type="button" class="btn ghost" data-speak="${w.word}">🔊 发音</button>
+                <button type="button" class="btn primary" data-spell-next>下一题</button>
+              </div>`
+            : ""}
+        </div>`;
+    }
+
+    function checkSpell() {
+      if (state.spell.answered) return;
+      const w = state.spell.queue[state.spell.index];
+      if (!w) return;
+      const input = document.getElementById("spell-input");
+      const typed = input ? input.value : state.spell.input;
+      state.spell.input = typed;
+      state.spell.answered = true;
+      state.spell.correct = normSpell(typed) === normSpell(w.word);
+      if (state.spell.correct) {
+        state.spell.score += 1;
+        state.known.add(w.word);
+      } else {
+        state.known.delete(w.word);
+      }
+      saveKnown();
+      speak(w.word);
+      render();
     }
 
     // Course sheet (mobile)
@@ -1246,6 +1485,7 @@
       document.querySelectorAll(".modes button").forEach((b) => b.classList.toggle("active", b === btn));
       state.flash.queue = [];
       state.quiz.queue = [];
+      state.spell.queue = [];
       render();
     });
 
@@ -1255,6 +1495,7 @@
       state.prefix = btn.dataset.prefix;
       state.flash.queue = [];
       state.quiz.queue = [];
+      state.spell.queue = [];
       renderFilters();
       render();
     });
@@ -1361,7 +1602,45 @@
       if (e.target.closest("[data-quiz-restart]")) {
         state.quiz.queue = [];
         render();
+        return;
       }
+
+      if (e.target.closest("[data-spell-hint]")) {
+        state.spell.hint = true;
+        render();
+        return;
+      }
+
+      if (e.target.closest("[data-spell-check]")) {
+        checkSpell();
+        return;
+      }
+
+      if (e.target.closest("[data-spell-next]")) {
+        state.spell.index += 1;
+        state.spell.answered = false;
+        state.spell.correct = false;
+        state.spell.input = "";
+        state.spell.hint = false;
+        render();
+        return;
+      }
+
+      if (e.target.closest("[data-spell-restart]")) {
+        state.spell.queue = [];
+        render();
+      }
+    });
+
+    document.getElementById("main").addEventListener("submit", (e) => {
+      if (!e.target.closest("#spell-form")) return;
+      e.preventDefault();
+      checkSpell();
+    });
+
+    document.getElementById("main").addEventListener("input", (e) => {
+      if (e.target.id !== "spell-input") return;
+      state.spell.input = e.target.value;
     });
 
     renderFilters();
