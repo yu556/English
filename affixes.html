@@ -533,40 +533,34 @@
       font-size: 0.82rem;
     }
 
-    .card {
-      perspective: 1000px;
-      min-height: 250px;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .card-inner {
-      position: relative;
-      width: 100%;
-      min-height: 250px;
-      transition: transform .45s cubic-bezier(.2,.8,.2,1);
-      transform-style: preserve-3d;
-    }
-
-    .card.flipped .card-inner { transform: rotateY(180deg); }
-
-    .face {
-      position: absolute;
-      inset: 0;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
+    .flash-panel {
       border: 1px solid var(--line);
       border-radius: 18px;
       background: #fff;
-      padding: 22px 18px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+      padding: 20px 16px;
+      cursor: pointer;
+      user-select: none;
       text-align: center;
     }
 
-    .face.back { transform: rotateY(180deg); background: #f0fdfa; }
+    .flash-panel.open {
+      background: #f0fdfa;
+      cursor: default;
+    }
+
+    .flash-panel .flash-main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .flash-panel .flash-detail {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
 
     .tag {
       font-family: "IBM Plex Mono", monospace;
@@ -623,22 +617,71 @@
       line-height: 1.45;
       color: var(--ink);
     }
-    .face.front .flash-pair { text-align: center; }
-    .face.front .flash-pair .fp-zh { display: none; }
     .meanings-line {
       font-size: 1.05rem;
       font-weight: 600;
       line-height: 1.45;
       margin: 8px 0 4px;
     }
-    @media (max-width: 560px) {
-      .flash-pair {
-        grid-template-columns: 1fr;
-        gap: 10px;
-        text-align: center;
-      }
-      .flash-pair .fp-arrow { display: none; }
+
+    .detail-box {
+      margin-top: 14px;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      text-align: left;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      color: #44403c;
     }
+
+    .detail-box .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 0;
+      border-top: 1px dashed #d6d3d1;
+    }
+
+    .detail-box .row:first-child { border-top: none; }
+    .detail-box .k { color: var(--muted); flex: 0 0 auto; }
+    .detail-box .v { font-weight: 600; text-align: right; word-break: break-word; }
+
+    .related-box {
+      margin-top: 12px;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      border-radius: 14px;
+      background: #fff;
+      border: 1px solid #99f6e4;
+      text-align: left;
+    }
+
+    .related-box .rb-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .related-item {
+      display: grid;
+      gap: 2px;
+      padding: 8px 0;
+      border-top: 1px dashed #e7e5e4;
+    }
+
+    .related-item:first-of-type { border-top: none; padding-top: 0; }
+    .related-item .ri-label { font-size: 0.72rem; color: var(--muted); }
+    .related-item .ri-word { font-weight: 700; font-size: 1rem; }
+    .related-item .ri-ipa {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.78rem;
+      color: #0f766e;
+    }
+    .related-item .ri-zh { font-size: 0.82rem; color: #44403c; line-height: 1.4; }
     .example { margin-top: 10px; font-size: 0.88rem; color: #44403c; line-height: 1.5; max-width: 34ch; }
     .hint-tap { margin-top: 16px; font-size: 0.78rem; color: #a8a29e; }
 
@@ -646,6 +689,8 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
+      position: relative;
+      z-index: 2;
     }
 
     .actions.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
@@ -1046,10 +1091,67 @@
       localStorage.setItem(STORE_KEY, JSON.stringify([...state.known]));
     }
 
-    function filtered() {
+    function filteredPairs() {
       return state.prefix === "all"
         ? WORDS.slice()
         : WORDS.filter((w) => w.prefix === state.prefix);
+    }
+
+    // 闪卡 / 测验 / 拼写：每个英文词独立，不再成对出题
+    function flatItems(pairs) {
+      const map = new Map();
+      const add = (item) => {
+        if (map.has(item.word)) {
+          const ex = map.get(item.word);
+          for (const r of item.related) {
+            if (!ex.related.some((x) => x.word === r.word)) ex.related.push(r);
+          }
+          if (!ex.note && item.note) ex.note = item.note;
+          if (!ex.example && item.example) ex.example = item.example;
+          return;
+        }
+        map.set(item.word, item);
+      };
+
+      for (const p of pairs) {
+        add({
+          word: p.base,
+          meaning: p.baseMeaning,
+          ipa: p.baseIpa || "",
+          pos: p.pos,
+          prefix: p.prefix,
+          role: "base",
+          related: [{
+            word: p.word,
+            meaning: p.meaning,
+            ipa: p.ipa || "",
+            pos: p.pos,
+            label: `否定形式 ${p.prefix}`,
+          }],
+        });
+        add({
+          word: p.word,
+          meaning: p.meaning,
+          ipa: p.ipa || "",
+          pos: p.pos,
+          prefix: p.prefix,
+          role: "affixed",
+          note: p.note,
+          example: p.example,
+          related: [{
+            word: p.base,
+            meaning: p.baseMeaning,
+            ipa: p.baseIpa || "",
+            pos: p.pos,
+            label: "原词",
+          }],
+        });
+      }
+      return [...map.values()];
+    }
+
+    function filteredFlat() {
+      return flatItems(filteredPairs());
     }
 
     function shuffle(arr) {
@@ -1088,16 +1190,19 @@
     }
 
     function updateStats() {
-      const list = filtered();
-      const known = list.filter((w) => state.known.has(w.word)).length;
+      const pairs = filteredPairs();
+      const flat = flatItems(pairs);
+      const known = flat.filter((w) => state.known.has(w.word)).length;
+      const allFlat = flatItems(WORDS).length;
       document.getElementById("stats").textContent =
-        `已掌握 ${known}/${list.length} · 共 ${WORDS.length}`;
+        `已掌握 ${known}/${flat.length} · 单词 ${allFlat}`;
     }
 
     function renderFilters() {
       const el = document.getElementById("filters");
       el.innerHTML = PREFIXES.map((p) => {
-        const count = p === "all" ? WORDS.length : WORDS.filter((w) => w.prefix === p).length;
+        const pairs = p === "all" ? WORDS : WORDS.filter((w) => w.prefix === p);
+        const count = flatItems(pairs).length;
         const label = p === "all" ? `全部 ${count}` : `${p}${count}`;
         return `<button type="button" class="chip ${state.prefix === p ? "active" : ""}" data-prefix="${p}">${label}</button>`;
       }).join("");
@@ -1140,31 +1245,32 @@
       return String(s || "").replace(/；/g, " · ");
     }
 
-    function flashPairHtml(w, withZh) {
+    function relatedHtml(item) {
+      if (!item.related || !item.related.length) return "";
       return `
-        <div class="flash-pair">
-          <div>
-            <div class="fp-word">${w.base}</div>
-            <div class="fp-ipa">${w.baseIpa || ""}</div>
-            ${withZh ? `<div class="fp-zh">${zhText(w.baseMeaning)}</div>` : ""}
-          </div>
-          <div class="fp-arrow">→</div>
-          <div>
-            <div class="fp-word">${w.word}</div>
-            <div class="fp-ipa">${w.ipa || ""}</div>
-            ${withZh ? `<div class="fp-zh">${zhText(w.meaning)}</div>` : ""}
-          </div>
+        <div class="related-box">
+          <div class="rb-title">变形 / 相关</div>
+          ${item.related.map((r) => `
+            <div class="related-item">
+              <div class="ri-label">${r.label || "相关词"}</div>
+              <div class="ri-word">${r.word} <span class="pos-badge">${r.pos || item.pos}</span>
+                <button type="button" class="speak-btn" data-speak="${r.word}" aria-label="朗读 ${r.word}" style="width:28px;height:28px;font-size:.75rem">🔊</button>
+              </div>
+              <div class="ri-ipa">${r.ipa || ""}</div>
+              <div class="ri-zh">${zhText(r.meaning)}</div>
+            </div>
+          `).join("")}
         </div>`;
     }
 
     function renderBrowse() {
-      const list = filtered();
+      const list = filteredPairs();
       if (!list.length) return `<div class="empty">这个词缀下没有词。</div>`;
 
       const banner = state.hideEn
         ? `<div class="lesson-banner">已隐藏英文，只显示中文。点卡片可临时查看英文答案。</div>`
         : state.prefix === "all"
-        ? `<div class="lesson-banner">每组是<strong>两个单词</strong>：左边原词 → 右边加否定前缀后的词。两边都有词性与音标，点 🔊 听该词发音。</div>`
+        ? `<div class="lesson-banner">浏览仍按讲义成对展示。闪卡 / 测验 / 拼写按<strong>单个单词</strong>练习。</div>`
         : `<div class="lesson-banner"><strong>${state.prefix}</strong> · ${PREFIX_NOTE[state.prefix] || ""}</div>`;
 
       const groups = {};
@@ -1208,7 +1314,7 @@
 
     function ensureFlashQueue() {
       if (!state.flash.queue.length) {
-        state.flash.queue = shuffle(filtered());
+        state.flash.queue = shuffle(filteredFlat());
         state.flash.index = 0;
         state.flash.flipped = false;
       }
@@ -1230,33 +1336,38 @@
 
       const w = q[state.flash.index];
       const pct = Math.round((state.flash.index / q.length) * 100);
+      const roleLabel = w.role === "base" ? "原词" : `否定 ${w.prefix}`;
 
       return `
         <div class="study-wrap">
           <div class="progress-bar"><i style="width:${pct}%"></i></div>
           <div class="meta-row">
             <span>${state.flash.index + 1} / ${q.length}</span>
-            <span>${w.prefix} · ${w.pos}</span>
+            <span>${roleLabel} · ${w.pos}</span>
           </div>
-          <div class="card ${state.flash.flipped ? "flipped" : ""}" id="flash-card" role="button" tabindex="0" aria-label="翻转卡片">
-            <div class="card-inner">
-              <div class="face front">
-                <div class="tag">${w.prefix} · ${w.pos} · 两个单词</div>
-                ${flashPairHtml(w, false)}
-                <div class="hint-tap">点卡片看中文意思</div>
-              </div>
-              <div class="face back">
-                <div class="tag">${w.prefix} · ${w.pos}</div>
-                ${flashPairHtml(w, true)}
+          <div class="flash-panel ${state.flash.flipped ? "open" : ""}" id="flash-card" role="button" tabindex="0" aria-expanded="${state.flash.flipped ? "true" : "false"}" aria-label="查看详情和变形">
+            <div class="flash-main">
+              <div class="tag">${roleLabel} · ${w.pos}</div>
+              <div class="word">${w.word}</div>
+              <div class="flash-ipa">${w.ipa || ""}</div>
+              ${!state.flash.flipped ? `<div class="hint-tap">点开看详情和变形</div>` : ""}
+            </div>
+            ${state.flash.flipped ? `
+              <div class="flash-detail">
+                <div class="meaning">${zhText(w.meaning)}</div>
+                <div class="detail-box">
+                  <div class="row"><span class="k">词性</span><span class="v">${w.pos}</span></div>
+                  <div class="row"><span class="k">音标</span><span class="v">${w.ipa || "—"}</span></div>
+                  <div class="row"><span class="k">类型</span><span class="v">${roleLabel}</span></div>
+                </div>
+                ${relatedHtml(w)}
                 ${w.note ? `<div class="example">${w.note}</div>` : ""}
                 ${w.example ? `<div class="example">“${w.example}”</div>` : ""}
-              </div>
-            </div>
+              </div>` : ""}
           </div>
-          <div class="actions cols-4">
+          <div class="actions cols-3">
             <button type="button" class="btn bad" data-flash-again>再练</button>
-            <button type="button" class="btn ghost" data-speak="${w.base}">🔊 原词</button>
-            <button type="button" class="btn ghost" data-speak="${w.word}">🔊 否定</button>
+            <button type="button" class="btn ghost" data-speak="${w.word}">🔊 发音</button>
             <button type="button" class="btn ok" data-flash-know>认识</button>
           </div>
         </div>`;
@@ -1264,7 +1375,7 @@
 
     function ensureQuizQueue() {
       if (!state.quiz.queue.length) {
-        state.quiz.queue = shuffle(filtered());
+        state.quiz.queue = shuffle(filteredFlat());
         state.quiz.index = 0;
         state.quiz.answered = false;
         state.quiz.score = 0;
@@ -1275,7 +1386,7 @@
 
     function makeChoices(correct) {
       if (!correct) return [];
-      const pool = WORDS.filter((w) => w.word !== correct.word);
+      const pool = filteredFlat().filter((w) => w.word !== correct.word);
       return shuffle([correct, ...shuffle(pool).slice(0, 3)]);
     }
 
@@ -1295,6 +1406,7 @@
 
       const w = q[state.quiz.index];
       const pct = Math.round((state.quiz.index / q.length) * 100);
+      const roleLabel = w.role === "base" ? "原词" : `否定 ${w.prefix}`;
 
       return `
         <div class="study-wrap">
@@ -1304,9 +1416,8 @@
             <span>得分 ${state.quiz.score}</span>
           </div>
           <div class="quiz-prompt">
-            <div class="tag" style="display:inline-block">${w.prefix} · ${w.pos}</div>
+            <div class="tag" style="display:inline-block">${roleLabel} · ${w.pos}</div>
             <div class="meanings-line">${zhText(w.meaning)}</div>
-            <div class="pos">原词：${w.base}（${zhText(w.baseMeaning)}）</div>
           </div>
           <div class="choices">
             ${state.quiz.choices.map((c) => {
@@ -1326,11 +1437,11 @@
             ${state.quiz.answered
               ? (state.quiz.picked === w.word
                   ? "正确"
-                  : `正确答案是 <strong>${w.word}</strong>${w.note ? " · " + w.note : ""}`)
-              : "根据中文义选择否定前缀词"}
+                  : `正确答案是 <strong>${w.word}</strong> ${w.ipa || ""}${w.note ? " · " + w.note : ""}`)
+              : "根据中文意思选择对应英文单词"}
           </div>
           ${state.quiz.answered
-            ? `<div class="actions" style="grid-template-columns:1fr 1fr">
+            ? `<div class="actions">
                 <button type="button" class="btn ghost" data-speak="${w.word}">🔊 听正确发音</button>
                 <button type="button" class="btn primary" data-quiz-next>下一题</button>
               </div>`
@@ -1340,7 +1451,7 @@
 
     function ensureSpellQueue() {
       if (!state.spell.queue.length) {
-        state.spell.queue = shuffle(filtered());
+        state.spell.queue = shuffle(filteredFlat());
         state.spell.index = 0;
         state.spell.answered = false;
         state.spell.correct = false;
@@ -1375,6 +1486,7 @@
         : state.spell.correct
         ? "ok"
         : "bad";
+      const roleLabel = w.role === "base" ? "原词" : `否定 ${w.prefix}`;
 
       return `
         <div class="study-wrap">
@@ -1384,7 +1496,7 @@
             <span>得分 ${state.spell.score}</span>
           </div>
           <div class="quiz-prompt">
-            <div class="tag" style="display:inline-block">${w.prefix} · ${w.pos}</div>
+            <div class="tag" style="display:inline-block">${roleLabel} · ${w.pos}</div>
             <div class="meanings-line">${zhText(w.meaning)}</div>
             ${state.spell.hint ? `<div class="flash-ipa">${w.ipa || ""}</div>` : ""}
           </div>
@@ -1531,12 +1643,10 @@
         }
       }
 
-      if (e.target.closest("#flash-card")) {
-        state.flash.flipped = !state.flash.flipped;
-        if (state.flash.flipped) {
-          const cur = state.flash.queue[state.flash.index];
-          if (cur) speak(cur.word);
-        }
+      if (e.target.closest("#flash-card") && !e.target.closest("[data-speak]") && !state.flash.flipped) {
+        state.flash.flipped = true;
+        const cur = state.flash.queue[state.flash.index];
+        if (cur) speak(cur.word);
         render();
         return;
       }
